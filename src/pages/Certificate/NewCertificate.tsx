@@ -27,6 +27,7 @@ interface CertificateFormData {
   booking_no: string;
   potato_type: string;
   token_no: string;
+  number_of_empty_sacks: number;
 }
 
 interface District {
@@ -93,6 +94,7 @@ export default function NewCertificate() {
     booking_no: "",
     potato_type: "",
     token_no: "",
+    number_of_empty_sacks: 0,
   });
 
   useEffect(() => {
@@ -420,6 +422,7 @@ export default function NewCertificate() {
       total_rent: formData.total_rent,
       advance_rent: formData.advance_rent,
       total_amount_taka: formData.total_amount_taka,
+      number_of_empty_sacks: formData.number_of_empty_sacks,
     };
 
     try {
@@ -462,6 +465,7 @@ export default function NewCertificate() {
       booking_no: "",
       potato_type: "",
       token_no: "",
+      number_of_empty_sacks: 0,
     }));
   };
 
