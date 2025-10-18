@@ -112,9 +112,20 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
   //   ],
   // },
   {
+    name: t("master_data"),
     icon: <FcPortraitMode />,
-    name: t("customer_database"),
-    path: "/customer-database",
+    subItems: [
+      {
+        name: t("customer_database"),
+        icon: <FcPackage />,
+        path: "/masterdata/customer",
+      },
+      {
+        name: t("agent_database"),
+        icon: <FcPackage />,
+        path: "/masterdata/agent",
+      },
+    ],
   },
 ];
 

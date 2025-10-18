@@ -73,5 +73,7 @@
   "counted_token": "Counted Token",
   "select_booking": "Select Booking",
   "certificate_list": "Certificate List",
-  "inventory_flow": "Inventory Flow"
+  "inventory_flow": "Inventory Flow",
+  "master_data": "Master Data",
+  "agent_database": "Agent Database"
 }

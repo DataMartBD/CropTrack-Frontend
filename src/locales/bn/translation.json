@@ -18,7 +18,7 @@
   "load": "সংরক্ষণ",
   "issue": "ডেলিভারি",
   "exchange": "পালট",
-  "customer_database": "কাস্টমার ডাটাবেজ",
+  "customer_database": "কৃষকের ডেটাবেজ",
   "name": "নাম",
   "name_ph": "গ্রাহকের নাম",
   "mobile": "মোবাইল নাম্বার",
@@ -72,5 +72,7 @@
   "booking_list": "বুকিং তালিকা",
   "select_booking": "বুকিং নির্বাচন করুন",
   "certificate_list": "দলিল তালিকা",
-  "inventory_flow": "ইনভেন্টরি"
+  "inventory_flow": "ইনভেন্টরি",
+  "master_data": "মাস্টার ডেটা",
+  "agent_database": "এজেন্ট ডেটাবেজ"
 }

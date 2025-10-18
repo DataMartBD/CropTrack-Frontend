@@ -459,7 +459,7 @@ export default function NewCertificate() {
       district: "",
       advance_rent: 0,
       totalBags: 0,
-      rent_per_sack: prev.rent_per_sack, // Keep the rent_per_sack value
+      rent_per_sack: prev.rent_per_sack,
       total_rent: 0.0,
       total_amount_taka: 0.0,
       booking_no: "",

@@ -21,6 +21,7 @@ import CertificateList from "./pages/Certificate/CertificateList";
 import LoadPage from "./pages/Certificate/Load/Load";
 import ExchangePage from "./pages/Certificate/Exchange/Exchange";
 import DeliveryPage from "./pages/Certificate/Delivery/Delivery";
+import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
 
 export default function App() {
   return (
@@ -47,6 +48,10 @@ export default function App() {
               <Route path="/token/generate" element={<GenerateToken />} />
               <Route path="/token/pendings" element={<PendingTokens />} />
               <Route path="/token/counted" element={<CountedTokens />} />
+              <Route
+                path="/masterdata/customer"
+                element={<CustomerDatabase />}
+              />
             </Route>
           </Route>
 
