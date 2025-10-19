@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { FaPlus } from "react-icons/fa";
 import { useLocation } from "react-router";
 import Swal from "sweetalert2";
 
@@ -30,6 +29,15 @@ interface DeliveryItem {
   quantity: number;
 }
 
+interface ChargesForm {
+  xpayloan: number;
+  xemptysacks: number;
+  xemptysackschgtot: number;
+  xinterestamt: number;
+  xchgtot: number;
+  xfanchgtot: number;
+}
+
 const api = {
   base: import.meta.env.VITE_API_BASE_URL,
 };
@@ -39,18 +47,20 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
 
   const [stock, setStock] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(false);
-  const [deliveryItems, setDeliveryItems] = useState<DeliveryItem[]>([]);
-  const [addedItems, setAddedItems] = useState<Set<string>>(new Set());
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [deliveryQty, setDeliveryQty] = useState<Record<number, number>>({});
+  const initialDeliveryQtyRef = useRef<Record<number, number>>({});
+  const [selectAll, setSelectAll] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // inputs state stores quantity as string to allow empty input
-  const [inputs, setInputs] = useState<
-    Record<
-      number,
-      {
-        quantity: string;
-      }
-    >
-  >({});
+  const [charges, setCharges] = useState<ChargesForm>({
+    xpayloan: 0,
+    xemptysacks: 0,
+    xemptysackschgtot: 0,
+    xinterestamt: 0,
+    xchgtot: 0,
+    xfanchgtot: 0,
+  });
 
   const fetchStock = async (tokenNo: string) => {
     const token = window.localStorage.getItem("jwtToken");
@@ -66,18 +76,12 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
       if (response.data.success) {
         setStock(response.data.data);
 
-        const initialInputs: Record<number, any> = {};
-        response.data.data.forEach(
-          (
-            // item: Stock,
-            idx: number
-          ) => {
-            initialInputs[idx] = {
-              quantity: "", // empty string instead of 0
-            };
-          }
-        );
-        setInputs(initialInputs);
+        const initialQty: Record<number, number> = {};
+        response.data.data.forEach((_: Stock, idx: number) => {
+          initialQty[idx] = _.number_of_sacks; // deliveryQty
+          initialDeliveryQtyRef.current[idx] = _.number_of_sacks; // store initial
+        });
+        setDeliveryQty(initialQty);
       } else {
         setStock([]);
       }
@@ -88,11 +92,11 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
     }
   };
 
-  // Fetch stock and initialize inputs
   useEffect(() => {
     setStock([]);
     setLoading(true);
-    setInputs({});
+    setSelectedItems(new Set());
+    setSelectAll(false);
 
     if (tokenNo) {
       fetchStock(tokenNo);
@@ -101,526 +105,478 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
     }
   }, [tokenNo, location.key]);
 
-  const handleInputChange = (idx: number, value: string) => {
-    setInputs((prev) => ({
+  const handleSelectItem = (idx: number) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(idx)) {
+      newSelected.delete(idx);
+    } else {
+      newSelected.add(idx);
+    }
+    setSelectedItems(newSelected);
+    setSelectAll(newSelected.size === stock.length && stock.length > 0);
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems(new Set());
+      setSelectAll(false);
+    } else {
+      const allIndices = new Set(stock.map((_, idx) => idx));
+      setSelectedItems(allIndices);
+      setSelectAll(true);
+    }
+  };
+
+const handleDeliveryQtyChange = (idx: number, value: string) => {
+  // allow empty string so user can type
+  if (value === "") {
+    setDeliveryQty((prev) => ({
       ...prev,
-      [idx]: {
-        ...prev[idx],
-        quantity: value,
-      },
+      [idx]: value as unknown as number, // temporarily store empty
+    }));
+    return;
+  }
+
+  let numValue = Number(value);
+  if (isNaN(numValue)) numValue = 1;
+
+  const max = stock[idx].number_of_sacks;
+  const finalValue = Math.min(Math.max(numValue, 1), max); // clamp 1..max
+
+  setDeliveryQty((prev) => ({
+    ...prev,
+    [idx]: finalValue,
+  }));
+};
+
+  const handleChargeChange = (field: keyof ChargesForm, value: string) => {
+    const numValue = value === "" ? 0 : Number(value);
+    setCharges((prev) => ({
+      ...prev,
+      [field]: isNaN(numValue) ? 0 : numValue,
     }));
   };
 
-  const handleAddItem = (idx: number) => {
-    const item = stock[idx];
-    const itemInputs = inputs[idx];
-    if (!itemInputs) return;
-
-    const quantity = Number(itemInputs.quantity || "0");
-
-    if (quantity <= 0) {
+  const handleConfirmDelivery = async () => {
+    if (selectedItems.size === 0) {
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Please enter a valid quantity",
-      });
-      return;
-    }
-    if (quantity > item.number_of_sacks) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Cannot add more sacks than available",
+        title: "No Items",
+        text: "Please select at least one item to deliver",
       });
       return;
     }
 
-    // Create a unique identifier for this stock item
-    const itemKey = `${item.token_no}-${item.customer_code}-${item.xunit}-${item.xfloor}-${item.xpocket}`;
-
-    // Add the item to the delivery items array
-    const newDeliveryItem: DeliveryItem = {
-      token_no: item.token_no,
-      customer_code: item.customer_code,
-      customer_name: item.customer_name,
-      xunit: item.xunit,
-      xfloor: item.xfloor,
-      xpocket: item.xpocket,
-      quantity: quantity,
-    };
-
-    setDeliveryItems((prev) => {
-      const newItems = [...prev, newDeliveryItem];
-      // Use setTimeout to prevent double toast in React.StrictMode
-      //   setTimeout(() => {
-      //     toast.success("Items added for delivery");
-      //   }, 0);
-      return newItems;
-    });
-
-    // Mark this item as added
-    setAddedItems((prev) => {
-      const newSet = new Set(prev);
-      newSet.add(itemKey);
-      return newSet;
-    });
-
-    // Reset the input field
-    setInputs((prev) => ({
-      ...prev,
-      [idx]: {
-        ...prev[idx],
-        quantity: "",
-      },
-    }));
-  };
-
-  const handleSubmitDelivery = async () => {
-    if (deliveryItems.length === 0) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Please add at least one item to deliver",
-      });
-      return;
-    }
-
-    // Calculate total items and quantity for display
-    const totalItems = deliveryItems.length;
-    const totalQuantity = deliveryItems.reduce(
-      (sum, item) => sum + item.quantity,
-      0
+    const deliveryItems: DeliveryItem[] = Array.from(selectedItems).map(
+      (idx) => {
+        const item = stock[idx];
+        return {
+          token_no: item.token_no,
+          customer_code: item.customer_code,
+          customer_name: item.customer_name,
+          xunit: item.xunit,
+          xfloor: item.xfloor,
+          xpocket: item.xpocket,
+          quantity: deliveryQty[idx],
+        };
+      }
     );
 
-    // Create HTML content for the modal showing delivery items
-    const itemsHtml = deliveryItems
-      .map((item, index) => {
-        return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${item.customer_name}</td>
-          <td>${item.xunit}, ${item.xfloor}, ${item.xpocket}</td>
-          <td>${item.quantity} sacks</td>
-        </tr>
-      `;
-      })
-      .join("");
+    setSubmitting(true);
+    try {
+      const token = window.localStorage.getItem("jwtToken");
+      const response = await axios.post(
+        `${api.base}/ops/delivery-challan/create/`,
+        {
+          token_no: tokenNo,
+          delivery_items: deliveryItems,
+          xpayloan: charges.xpayloan,
+          xemptysacks: charges.xemptysacks,
+          xemptysackschgtot: charges.xemptysackschgtot,
+          xinterestamt: charges.xinterestamt,
+          xchgtot: charges.xchgtot,
+          xfanchgtot: charges.xfanchgtot,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    const result = await Swal.fire({
-      title: "Process Delivery",
-      html: `
-        <div class="mb-4">
-          <h3 class="text-lg font-semibold mb-2">Delivery Summary</h3>
-          <p>Total Items: ${totalItems} | Total Quantity: ${totalQuantity} sacks</p>
-          
-          <div class="mt-3 max-h-60 overflow-auto">
-            <table class="w-full text-sm text-left">
-              <thead class="text-xs uppercase bg-gray-100">
-                <tr>
-                  <th class="px-2 py-2">#</th>
-                  <th class="px-2 py-2">Customer</th>
-                  <th class="px-2 py-2">Location</th>
-                  <th class="px-2 py-2">Quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label for="loan-pay" class="block text-sm font-medium text-gray-700 text-left mb-1">Loan Pay</label>
-            <input id="loan-pay" type="number" class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
-          </div>
-          
-          <div>
-            <label for="empty-sacks" class="block text-sm font-medium text-gray-700 text-left mb-1">Number of Empty Sacks</label>
-            <input id="empty-sacks" type="number" class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
-          </div>
-          
-          <div>
-            <label for="empty-sacks-charge" class="block text-sm font-medium text-gray-700 text-left mb-1">Total Price of Empty Sacks</label>
-            <input id="empty-sacks-charge" type="number" class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
-          </div>
-          
-          <div>
-            <label for="interest-amount" class="block text-sm font-medium text-gray-700 text-left mb-1">Interest Amount</label>
-            <input id="interest-amount" type="number" class="w-full px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
-          </div>
-          
-          <div>
-            <label for="transportation-fee" class="block text-sm font-medium text-gray-700 text-left mb-1">Transportation Fee</label>
-            <input id="transportation-fee" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
-          </div>
-          
-          <div>
-            <label for="fanning-charge" class="block text-sm font-medium text-gray-700 text-left mb-1">Fanning Charge</label>
-            <input id="fanning-charge" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="0">
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: "Submit Delivery",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#4f46e5",
-      preConfirm: () => {
-        const popup = Swal.getPopup();
-        if (!popup) return false;
-
-        // Get all input values
-        const loanPay = popup.querySelector("#loan-pay") as HTMLInputElement;
-        const emptySacks = popup.querySelector(
-          "#empty-sacks"
-        ) as HTMLInputElement;
-        const emptySacksCharge = popup.querySelector(
-          "#empty-sacks-charge"
-        ) as HTMLInputElement;
-        const interestAmount = popup.querySelector(
-          "#interest-amount"
-        ) as HTMLInputElement;
-        const transportationFee = popup.querySelector(
-          "#transportation-fee"
-        ) as HTMLInputElement;
-        const fanningCharge = popup.querySelector(
-          "#fanning-charge"
-        ) as HTMLInputElement;
-
-        // Convert values to numbers, defaulting to 0 if empty or invalid
-        const getNumberValue = (input: HTMLInputElement) => {
-          const value = input.value.trim();
-          return value && !isNaN(Number(value)) ? Number(value) : 0;
-        };
-
-        return {
-          xpayloan: getNumberValue(loanPay),
-          xemptysacks: getNumberValue(emptySacks),
-          xemptysackschgtot: getNumberValue(emptySacksCharge),
-          xinterestamt: getNumberValue(interestAmount),
-          xchgtot: getNumberValue(transportationFee),
-          xfanchgtot: getNumberValue(fanningCharge),
-        };
-      },
-    });
-
-    if (result.isConfirmed && result.value) {
-      // Destructure all the values from the form
-      const {
-        xpayloan,
-        xemptysacks,
-        xemptysackschgtot,
-        xinterestamt,
-        xchgtot,
-        xfanchgtot,
-      } = result.value;
-
-      // For now, just console log the data as requested
-      console.log({
-        // Header information
-        token_no: tokenNo,
-        // stock: stock,
-
-        // Delivery information
-        delivery_items: deliveryItems,
-
-        // Payment and charges information
-        xpayloan,
-        xemptysacks,
-        xemptysackschgtot,
-        xinterestamt,
-        xchgtot,
-        xfanchgtot,
-      });
-
-      // In the future, this would be an API call:
-
-      try {
-        const token = window.localStorage.getItem("jwtToken");
-        const response = await axios.post(
-          `${api.base}/ops/delivery-challan/create/`,
-          {
-            token_no: tokenNo,
-            delivery_items: deliveryItems,
-            xpayloan,
-            xemptysacks,
-            xemptysackschgtot,
-            xinterestamt,
-            xchgtot,
-            xfanchgtot,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        if (response.data.success === true) {
-          Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "Delivery processed successfully!",
-            confirmButtonText: "OK",
-          }).then(() => {
-            // Clear delivery items and refresh stock
-            setDeliveryItems([]);
-            setAddedItems(new Set()); // Clear the added items set
-            fetchStock(tokenNo);
+      if (response.data.success === true) {
+        Swal.fire({
+          icon: "success",
+          title: "Delivery Completed",
+          text: "Delivery challan created successfully!",
+        }).then(() => {
+          setSelectedItems(new Set());
+          setSelectAll(false);
+          setDeliveryQty({});
+          setCharges({
+            xpayloan: 0,
+            xemptysacks: 0,
+            xemptysackschgtot: 0,
+            xinterestamt: 0,
+            xchgtot: 0,
+            xfanchgtot: 0,
           });
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Error processing delivery.",
-          });
-        }
-      } catch (error: unknown) {
-        let message = "Something went wrong";
-
-        if (axios.isAxiosError(error)) {
-          // It's an axios error, safe to access response data
-          if (
-            error.response &&
-            error.response.data &&
-            typeof error.response.data.message === "string"
-          ) {
-            message = error.response.data.message;
-          } else if (error.message) {
-            message = error.message;
-          }
-        } else if (error instanceof Error) {
-          // It's a normal JS error
-          message = error.message;
-        }
-
+          fetchStock(tokenNo);
+        });
+      } else {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: message,
+          text: "Failed to process delivery",
         });
       }
+    } catch (error: unknown) {
+      let message = "Something went wrong";
 
-      // Show success message and clear the form
-      //   Swal.fire({
-      //     icon: "success",
-      //     title: "Success",
-      //     text: "Delivery processed successfully!",
-      //     confirmButtonText: "OK",
-      //   }).then(() => {
-      //     // Clear delivery items and refresh stock
-      //     setDeliveryItems([]);
-      //     setAddedItems(new Set()); // Clear the added items set
-      //     fetchStock(tokenNo);
-      //   });
+      if (axios.isAxiosError(error)) {
+        if (
+          error.response &&
+          error.response.data &&
+          typeof error.response.data.message === "string"
+        ) {
+          message = error.response.data.message;
+        } else if (error.message) {
+          message = error.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: message,
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-gray-900 dark:border-gray-600 dark:border-t-white"></div>
       </div>
     );
   }
 
+  const totalDeliveryQty = Array.from(selectedItems).reduce(
+    (sum, idx) => sum + (deliveryQty[idx] || 0),
+    0
+  );
+  {
+    /* Compute valid state for button */
+  }
+  const isDeliveryValid =
+    selectedItems.size > 0 &&
+    totalDeliveryQty > 0 &&
+    Array.from(selectedItems).every((idx) => (deliveryQty[idx] || 0) > 0);
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {stock.length === 0 && (
-          <p className="col-span-full">No stock data available.</p>
-        )}
-        {stock.map((item, idx) => {
-          const itemInputs = inputs[idx] || {
-            quantity: "",
-          };
-
-          // Create a unique identifier for this stock item
-          const itemKey = `${item.token_no}-${item.customer_code}-${item.xunit}-${item.xfloor}-${item.xpocket}`;
-
-          // Skip rendering this item if it's already been added to delivery
-          if (addedItems.has(itemKey)) return null;
-
-          return (
-            <div
-              key={`${item.token_no}-${idx}`}
-              className="border rounded-lg shadow-sm bg-white dark:bg-gray-900 hover:shadow-md transition-shadow duration-200 p-3"
-            >
-              {/* Card Header - Horizontal layout for name and mobile */}
-              <div className="mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate mr-2">
-                    {item.customer_name}
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {item.xmobile}
-                  </p>
-                </div>
-              </div>
-
-              {/* Card Body - Compact layout */}
-              <div className="mb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
-                  {/* Left Side: Unit, Floor, Pocket */}
-                  <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
-                    <span className="bg-indigo-100 dark:bg-indigo-900 px-2 py-0.5 rounded-full text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                      {item.xunit}
-                    </span>
-                    <span className="bg-indigo-100 dark:bg-indigo-900 px-2 py-0.5 rounded-full text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                      {item.xfloor}
-                    </span>
-                    <span className="bg-indigo-100 dark:bg-indigo-900 px-2 py-0.5 rounded-full text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                      {item.xpocket}
-                    </span>
-
-                    {/* Sacks Count Tag (Different Highlight) */}
-                    <span className="bg-yellow-100 dark:bg-yellow-900 px-2 py-0.5 rounded-full text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                      {item.number_of_sacks} sacks
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Footer - Input and Add Button */}
-              <div className="flex space-x-2 items-center">
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <label
-                      htmlFor={`quantity-${idx}`}
-                      className="text-xs font-medium text-gray-700 dark:text-gray-300 mr-2 whitespace-nowrap"
-                    >
-                      Qty:
-                    </label>
-                    <input
-                      id={`quantity-${idx}`}
-                      type="number"
-                      min={0}
-                      max={item.number_of_sacks}
-                      value={itemInputs.quantity}
-                      onChange={(e) => handleInputChange(idx, e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddItem(idx)}
-                  className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-white rounded-md px-3 py-1 text-sm font-medium transition flex items-center"
-                >
-                  <FaPlus className="mr-1 text-xs" /> Add
-                </button>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Stock Table - Left Side */}
+        <div className="bg-white dark:bg-gray-900 rounded-lg border-b border-l border-r border-gray-300 dark:border-gray-800">
+          <div className=" bg-slate-500 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {/* Left side */}
+            <div>
+              <h2 className="font-semibold text-white dark:text-white">
+                Stock Items
+              </h2>
+              <p className="text-xs text-white dark:text-gray-400 mt-0.5">
+                {selectedItems.size} selected
+              </p>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Delivery Items Section */}
-      <div className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Delivery Items ({deliveryItems.length})
-          </h2>
-          <button
-            onClick={handleSubmitDelivery}
-            disabled={deliveryItems.length === 0}
-            className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white rounded-lg px-6 py-2 text-base font-semibold transition"
-          >
-            Process Delivery
-          </button>
-        </div>
+            {/* Right side */}
+            <div className="text-right">
+              <p className="text-sm  text-white dark:text-white">
+                Customer Name: {stock[0]?.customer_name || "-"}
+              </p>
+              <p className="text-xs text-white dark:text-gray-400">
+                {stock[0]?.customer_code || "-"} • {stock[0]?.xmobile || "-"}
+              </p>
+            </div>
+          </div>
 
-        {deliveryItems.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 italic">
-            No items added to delivery yet. Add items from the cards above.
-          </p>
-        ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Customer
+                  <th className="px-4 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 cursor-pointer"
+                    />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  {/* <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold">
+                    Customer
+                  </th> */}
+                  <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold">
                     Unit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold">
                     Floor
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold">
                     Pocket
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Quantity
+                  <th className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 font-semibold">
+                    Available Qty
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                  <th className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 font-semibold">
+                    Delivery Qty
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {deliveryItems.map((item, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {item.customer_name}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {item.customer_code}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">
-                        {item.xunit}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">
-                        {item.xfloor}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">
-                        {item.xpocket}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">
-                        {item.quantity} sacks
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => {
-                          // Get the item being removed
-                          const removedItem = deliveryItems[index];
-
-                          // Create the unique key for this item
-                          const itemKey = `${removedItem.token_no}-${removedItem.customer_code}-${removedItem.xunit}-${removedItem.xfloor}-${removedItem.xpocket}`;
-
-                          // Remove from delivery items
-                          setDeliveryItems((prev) =>
-                            prev.filter((_, i) => i !== index)
-                          );
-
-                          // Remove from added items set to make it visible again
-                          setAddedItems((prev) => {
-                            const newSet = new Set(prev);
-                            newSet.delete(itemKey);
-                            return newSet;
-                          });
-                        }}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        Remove
-                      </button>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {stock.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                    >
+                      No stock available
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  stock.map((item, idx) => {
+                    const isSelected = selectedItems.has(idx);
+                    return (
+                      <tr
+                        key={idx}
+                        onClick={(e) => {
+                          // prevent double-trigger when clicking on input
+                          if (
+                            (e.target as HTMLElement).tagName !== "INPUT" &&
+                            (e.target as HTMLElement).tagName !== "BUTTON"
+                          ) {
+                            handleSelectItem(idx);
+                          }
+                        }}
+                        className={`cursor-pointer ${
+                          isSelected
+                            ? "bg-blue-50 dark:bg-blue-900/20"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectItem(idx)}
+                            className="w-4 h-4 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()} // avoid row toggle twice
+                          />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {item.xunit}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {item.xfloor}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {item.xpocket}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 px-3 py-1 rounded text-xs font-semibold">
+                            {item.number_of_sacks}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="number"
+                            min={0} // allow typing 0 temporarily
+                            max={item.number_of_sacks}
+                            value={deliveryQty[idx]}
+                            onChange={(e) => {
+                              const rawValue = e.target.value;
+                              // allow empty string for editing
+                              const numValue =
+                                rawValue === ""
+                                  ? ""
+                                  : Math.min(
+                                      Number(rawValue),
+                                      item.number_of_sacks
+                                    );
+                              handleDeliveryQtyChange(idx, String(numValue));
+                            }}
+                            onBlur={() => {
+                              if (!deliveryQty[idx] || deliveryQty[idx] === 0) {
+                                // reset to initial quantity on blur
+                                setDeliveryQty((prev) => ({
+                                  ...prev,
+                                  [idx]: initialDeliveryQtyRef.current[idx],
+                                }));
+                              }
+                            }}
+                            disabled={!isSelected}
+                            className="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+
+        {/* Right Side - Charges & Summary */}
+        <div className="space-y-6">
+          {/* Summary Card */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg border-b border-l border-r border-gray-300 dark:border-gray-800">
+            <div className="border-b bg-stone-500 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-4 py-2.5">
+              <h3 className="font-semibold text-white dark:text-white">
+                Summary
+              </h3>
+            </div>
+
+            <div className="p-3 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Pockets Selected
+                </p>
+                <p className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
+                  {selectedItems.size}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Total Delivery Qty
+                </p>
+                <p className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
+                  {totalDeliveryQty} sacks
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Charges */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg border-b border-l border-r border-gray-300 dark:border-gray-800">
+            <div className="border-b bg-zinc-600 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-6 py-4">
+              <h2 className="font-semibold text-white dark:text-white">
+                Charges & Deductions
+              </h2>
+            </div>
+
+            <div className="p-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Loan Pay
+                </label>
+                <input
+                  type="number"
+                  value={charges.xpayloan}
+                  onChange={(e) =>
+                    handleChargeChange("xpayloan", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Empty Sacks
+                </label>
+                <input
+                  type="number"
+                  value={charges.xemptysacks}
+                  onChange={(e) =>
+                    handleChargeChange("xemptysacks", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Empty Sacks Price
+                </label>
+                <input
+                  type="number"
+                  value={charges.xemptysackschgtot}
+                  onChange={(e) =>
+                    handleChargeChange("xemptysackschgtot", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Interest Amount
+                </label>
+                <input
+                  type="number"
+                  value={charges.xinterestamt}
+                  onChange={(e) =>
+                    handleChargeChange("xinterestamt", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Transportation Fee
+                </label>
+                <input
+                  type="number"
+                  value={charges.xchgtot}
+                  onChange={(e) =>
+                    handleChargeChange("xchgtot", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Fanning Charge
+                </label>
+                <input
+                  type="number"
+                  value={charges.xfanchgtot}
+                  onChange={(e) =>
+                    handleChargeChange("xfanchgtot", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <button
+                onClick={handleConfirmDelivery}
+                disabled={submitting || !isDeliveryValid}
+                className="col-span-2 bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800  disabled:bg-gray-400  dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition"
+              >
+                {submitting ? "Submitting..." : "Confirm Delivery"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

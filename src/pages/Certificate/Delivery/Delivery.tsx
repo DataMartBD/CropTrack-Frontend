@@ -28,7 +28,7 @@ export default function DeliveryPage() {
         description="Delivery Page - CropTrack"
       />
       <PageBreadcrumb pageTitle="Delivery" />
-      <div className="rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
+      <div className="rounded-2xl border border-gray-200 bg-white px-5 py-5 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-8">
         <Toaster position="bottom-right" />
         {!tokenNo ? (
           <>
@@ -67,7 +67,7 @@ export default function DeliveryPage() {
           <>
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                Delivery for <span className="text-blue-700">{tokenNo}</span>
+                Delivery for <span className="text-blue-700 dark:text-blue-500">{tokenNo}</span>
               </h2>
             </div>
             <DeliveryForm tokenNo={selectedToken} />
