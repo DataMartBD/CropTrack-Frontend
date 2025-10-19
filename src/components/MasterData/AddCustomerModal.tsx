@@ -27,6 +27,7 @@ export default function AddCustomerModal({ isOpen, onClose, onAdded }: any) {
     trade_license_number: "",
     // bin_number: "",
     tin_number: "",
+    customer_type: "Farmer",
   });
 
   // Fetch districts on mount
@@ -130,6 +131,7 @@ export default function AddCustomerModal({ isOpen, onClose, onAdded }: any) {
         trade_license_number: "",
         // bin_number: "",
         tin_number: "",
+        customer_type: "Farmer",
       });
     } catch (error: any) {
       Swal.fire({

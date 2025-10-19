@@ -1,13 +1,7 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { useEffect, useState, useMemo } from "react";
-// import { Modal } from "../../components/ui/modal";
-// import Input from "../../components/form/input/InputField";
-// import Label from "../../components/form/Label";
 import axios from "axios";
-// import toast, { Toaster } from "react-hot-toast";
-// import DatePicker from "react-datepicker";
-// import Swal from "sweetalert2";
 import "react-datepicker/dist/react-datepicker.css";
 import { useTranslation } from "react-i18next";
 
@@ -23,15 +17,14 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { FcEditImage, FcPlus } from "react-icons/fc";
-// import Swal from "sweetalert2";
-import AddCustomerModal from "../../components/MasterData/AddCustomerModal";
-import EditCustomerModal from "../../components/MasterData/EditCustomerModal";
+import AddAgentModal from "../../components/MasterData/AddAgentModal";
+import EditAgentModal from "../../components/MasterData/EditAgentModal";
 
 const api = {
   base: import.meta.env.VITE_API_BASE_URL,
 };
 
-interface CustomerModel {
+interface AgentModel {
   create_date: string;
   customer_code: string;
   customer_name: string;
@@ -51,11 +44,10 @@ interface CustomerModel {
   is_active: boolean;
 }
 
-export default function CustomerDatabase() {
+export default function AgentDatabase() {
   const { t } = useTranslation();
-  const [customersData, setCustomersData] = useState<CustomerModel[]>([]);
+  const [agentsData, setAgentsData] = useState<AgentModel[]>([]);
   const navigate = useNavigate();
-  //   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,29 +60,30 @@ export default function CustomerDatabase() {
   };
 
   const filteredCustomers = useMemo(() => {
-    if (!searchQuery.trim()) return customersData;
+    if (!searchQuery.trim()) return agentsData;
 
-    return customersData.filter((cust) => {
+    return agentsData.filter((ag) => {
       const searchLower = searchQuery.toLowerCase();
 
       return (
-        cust.customer_name.toString().toLowerCase().includes(searchLower) ||
-        cust.xmobile.toString().toLowerCase().includes(searchLower)
+        ag.customer_name.toString().toLowerCase().includes(searchLower) ||
+        ag.xmobile.toString().toLowerCase().includes(searchLower)
       );
     });
-  }, [customersData, searchQuery]);
+  }, [agentsData, searchQuery]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] =
-    useState<CustomerModel | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<AgentModel | null>(
+    null
+  );
 
-  const columnHelper = createColumnHelper<CustomerModel>();
+  const columnHelper = createColumnHelper<AgentModel>();
 
   const columns = useMemo(
     () => [
       columnHelper.accessor("customer_code", {
-        header: "🎫 Customer Code",
+        header: "🎫 Agent Code",
         cell: (info) => info.getValue(),
       }),
       columnHelper.accessor("customer_name", {
@@ -198,11 +191,11 @@ export default function CustomerDatabase() {
             Authorization: `Bearer ${token}`,
           },
           params: {
-            customer_type: "Farmer",
+            customer_type: "Agent",
           },
         }
       );
-      setCustomersData(response.data.data);
+      setAgentsData(response.data.data);
       //   setTotal(response.data.meta.total_count);
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -217,22 +210,22 @@ export default function CustomerDatabase() {
   return (
     <div>
       <PageMeta
-        title="Customer Database - CropTrack"
-        description="Customer Database - CropTrack"
+        title="Agent Database - CropTrack"
+        description="Agent Database - CropTrack"
       />
-      <PageBreadcrumb pageTitle="Customer Database" />
+      <PageBreadcrumb pageTitle="Agent Database" />
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-7">
         {/* Header with Add Button */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-            {t("customer_database")}
+            {t("agent_database")}
           </h2>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-1 py-1 text-sm font-medium text-gray-700  dark:bg-gray-700 dark:text-white rounded-lg hover:text-white hover:bg-[#49ae56] dark:hover:bg-[#13503E]"
           >
-            <FcPlus size={20} /> Add Customer
+            <FcPlus size={20} /> Add Agent
           </button>
         </div>
 
@@ -291,7 +284,7 @@ export default function CustomerDatabase() {
                   />
                 </svg>
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                  Loading customer data...
+                  Loading agent data...
                 </p>
               </div>
             </div>
@@ -460,15 +453,15 @@ export default function CustomerDatabase() {
         )}
 
         {/* Edit Modal */}
-        <EditCustomerModal
+        <EditAgentModal
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
           onUpdated={fetchCustomers}
-          customer={selectedCustomer}
+          agent={selectedCustomer}
         />
         {/* Add Modal */}
 
-        <AddCustomerModal
+        <AddAgentModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onAdded={fetchCustomers}

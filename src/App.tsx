@@ -22,6 +22,7 @@ import LoadPage from "./pages/Certificate/Load/Load";
 import ExchangePage from "./pages/Certificate/Exchange/Exchange";
 import DeliveryPage from "./pages/Certificate/Delivery/Delivery";
 import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
+import AgentDatabase from "./pages/MasterData/AgentDatabase";
 
 export default function App() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
                 path="/masterdata/customer"
                 element={<CustomerDatabase />}
               />
+              <Route path="/masterdata/agent" element={<AgentDatabase />} />
             </Route>
           </Route>
 

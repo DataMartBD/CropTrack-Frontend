@@ -9,19 +9,19 @@ const api = {
   base: import.meta.env.VITE_API_BASE_URL,
 };
 
-interface EditCustomerModalProps {
+interface EditAgentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdated: () => void;
-  customer: any;
+  agent: any;
 }
 
-export default function EditCustomerModal({
+export default function EditAgentModal({
   isOpen,
   onClose,
   onUpdated,
-  customer,
-}: EditCustomerModalProps) {
+  agent,
+}: EditAgentModalProps) {
   const [districts, setDistricts] = useState<any[]>([]);
   const [upazilas, setUpazilas] = useState<any[]>([]);
   const [unions, setUnions] = useState<any[]>([]);
@@ -87,32 +87,32 @@ export default function EditCustomerModal({
 
   // Prefill form and fetch dependent dropdowns
   useEffect(() => {
-    if (isOpen && customer) {
+    if (isOpen && agent) {
       setFormData({
-        customer_name: customer.customer_name || "",
-        xmobile: customer.xmobile || "",
-        father_name: customer.father_name || "",
-        district_name: customer.district_name || "",
-        upazila_name: customer.upazila_name || "",
-        union_name: customer.union_name || "",
-        post_office: customer.post_office || "",
-        village: customer.village || "",
-        trade_license_number: customer.trade_license_number || "",
-        tin_number: customer.tin_number || "",
-        is_active: customer.is_active ?? true,
+        customer_name: agent.customer_name || "",
+        xmobile: agent.xmobile || "",
+        father_name: agent.father_name || "",
+        district_name: agent.district_name || "",
+        upazila_name: agent.upazila_name || "",
+        union_name: agent.union_name || "",
+        post_office: agent.post_office || "",
+        village: agent.village || "",
+        trade_license_number: agent.trade_license_number || "",
+        tin_number: agent.tin_number || "",
+        is_active: agent.is_active ?? true,
       });
 
       fetchDistricts().then(() => {
-        if (customer.district_name) {
-          fetchUpazilas(customer.district_name).then(() => {
-            if (customer.upazila_name) {
-              fetchUnions(customer.district_name, customer.upazila_name);
+        if (agent.district_name) {
+          fetchUpazilas(agent.district_name).then(() => {
+            if (agent.upazila_name) {
+              fetchUnions(agent.district_name, agent.upazila_name);
             }
           });
         }
       });
     }
-  }, [isOpen, customer]);
+  }, [isOpen, agent]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -143,10 +143,10 @@ export default function EditCustomerModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customer?.customer_code) {
+    if (!agent?.customer_code) {
       Swal.fire({
         icon: "error",
-        title: "Invalid customer record!",
+        title: "Invalid agent record!",
         timer: 1000,
         showConfirmButton: false,
       });
@@ -158,14 +158,14 @@ export default function EditCustomerModal({
 
     try {
       await axios.put(
-        `${api.base}/masterdata/customers/update/${customer.customer_code}/`,
+        `${api.base}/masterdata/customers/update/${agent.customer_code}/`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       Swal.fire({
         icon: "success",
-        title: "Customer updated successfully",
+        title: "Agent updated successfully",
         timer: 1000,
         showConfirmButton: false,
       });
@@ -175,8 +175,8 @@ export default function EditCustomerModal({
     } catch (error: any) {
       Swal.fire({
         icon: "error",
-        title: "Error updating customer",
-        text: error.response?.data?.message || "Failed to update customer",
+        title: "Error updating agent",
+        text: error.response?.data?.message || "Failed to update agent",
       });
     } finally {
       setIsLoading(false);
@@ -187,14 +187,14 @@ export default function EditCustomerModal({
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-[900px] m-4">
       <div className="no-scrollbar relative w-full max-w-[900px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
         <h4 className="mb-6 text-2xl font-semibold text-gray-800 dark:text-white/90">
-          Edit Customer
+          Edit Agent
         </h4>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">
             <div>
               <Label>
-                Customer Name <span className="text-red-500">*</span>
+                Agent Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 type="text"
