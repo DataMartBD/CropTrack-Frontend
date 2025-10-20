@@ -33,9 +33,9 @@ interface ChargesForm {
   xpayloan: number;
   xemptysacks: number;
   xemptysackschgtot: number;
-  xinterestamt: number;
+  xinterestrate: number;
   xchgtot: number;
-  xfanchgtot: number;
+  xfanchgtpersack: number;
 }
 
 const api = {
@@ -57,10 +57,34 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
     xpayloan: 0,
     xemptysacks: 0,
     xemptysackschgtot: 0,
-    xinterestamt: 0,
+    xinterestrate: 0,
     xchgtot: 0,
-    xfanchgtot: 0,
+    xfanchgtpersack: 0,
   });
+
+  const [emptySackPrice, setEmptySackPrice] = useState<number>(0);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem("jwtToken");
+    const fetchEmptySackPrice = async () => {
+      try {
+        const res = await axios.get(
+          `${api.base}/masterdata/rate/all-rent/EMPTY_SACK_PRICE/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (res.data.success && res.data.data?.xrate) {
+          console.log(res.data.data.xrate);
+          setEmptySackPrice(res.data.data.xrate);
+        }
+      } catch (err) {
+        console.error("Failed to fetch EMPTY_SACK_PRICE", err);
+        setEmptySackPrice(0);
+      }
+    };
+    fetchEmptySackPrice();
+  }, []);
 
   const fetchStock = async (tokenNo: string) => {
     const token = window.localStorage.getItem("jwtToken");
@@ -78,8 +102,8 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
 
         const initialQty: Record<number, number> = {};
         response.data.data.forEach((_: Stock, idx: number) => {
-          initialQty[idx] = _.number_of_sacks; // deliveryQty
-          initialDeliveryQtyRef.current[idx] = _.number_of_sacks; // store initial
+          initialQty[idx] = _.number_of_sacks;
+          initialDeliveryQtyRef.current[idx] = _.number_of_sacks;
         });
         setDeliveryQty(initialQty);
       } else {
@@ -127,35 +151,52 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
     }
   };
 
-const handleDeliveryQtyChange = (idx: number, value: string) => {
-  // allow empty string so user can type
-  if (value === "") {
+  const handleDeliveryQtyChange = (idx: number, value: string) => {
+    if (value === "") {
+      setDeliveryQty((prev) => ({
+        ...prev,
+        [idx]: value as unknown as number,
+      }));
+      return;
+    }
+
+    let numValue = Number(value);
+    if (isNaN(numValue)) numValue = 1;
+
+    const max = stock[idx].number_of_sacks;
+    const finalValue = Math.min(Math.max(numValue, 1), max);
+
     setDeliveryQty((prev) => ({
       ...prev,
-      [idx]: value as unknown as number, // temporarily store empty
-    }));
-    return;
-  }
-
-  let numValue = Number(value);
-  if (isNaN(numValue)) numValue = 1;
-
-  const max = stock[idx].number_of_sacks;
-  const finalValue = Math.min(Math.max(numValue, 1), max); // clamp 1..max
-
-  setDeliveryQty((prev) => ({
-    ...prev,
-    [idx]: finalValue,
-  }));
-};
-
-  const handleChargeChange = (field: keyof ChargesForm, value: string) => {
-    const numValue = value === "" ? 0 : Number(value);
-    setCharges((prev) => ({
-      ...prev,
-      [field]: isNaN(numValue) ? 0 : numValue,
+      [idx]: finalValue,
     }));
   };
+
+  const handleChargeChange = (field: keyof typeof charges, value: string) => {
+    setCharges((prev) => ({
+      ...prev,
+      [field]: Number(value) || 0,
+    }));
+  };
+
+  const totalDeliveryQty = Array.from(selectedItems).reduce(
+    (sum, idx) => sum + (deliveryQty[idx] || 0),
+    0
+  );
+
+  const totalFanningCharge = totalDeliveryQty * charges.xfanchgtpersack;
+  const emptySacksCharge = charges.xemptysacks * emptySackPrice;
+  const subtotal =
+    charges.xpayloan +
+    emptySacksCharge +
+    // charges.xinterestrate +
+    charges.xchgtot +
+    totalFanningCharge;
+
+  const isDeliveryValid =
+    selectedItems.size > 0 &&
+    totalDeliveryQty > 0 &&
+    Array.from(selectedItems).every((idx) => (deliveryQty[idx] || 0) > 0);
 
   const handleConfirmDelivery = async () => {
     if (selectedItems.size === 0) {
@@ -190,12 +231,12 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
         {
           token_no: tokenNo,
           delivery_items: deliveryItems,
-          xpayloan: charges.xpayloan,
-          xemptysacks: charges.xemptysacks,
-          xemptysackschgtot: charges.xemptysackschgtot,
-          xinterestamt: charges.xinterestamt,
-          xchgtot: charges.xchgtot,
-          xfanchgtot: charges.xfanchgtot,
+          xpayloan: Number(charges.xpayloan) || 0,
+          xemptysacks: Number(charges.xemptysacks) || 0,
+          xemptysackschgtot: Number(emptySackPrice) || 0,
+          xinterestrate: Number(charges.xinterestrate) || 0,
+          xchgtot: Number(charges.xchgtot) || 0,
+          xfanchgtpersack: Number(charges.xfanchgtpersack) || 0,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -213,9 +254,9 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
             xpayloan: 0,
             xemptysacks: 0,
             xemptysackschgtot: 0,
-            xinterestamt: 0,
+            xinterestrate: 0,
             xchgtot: 0,
-            xfanchgtot: 0,
+            xfanchgtpersack: 0,
           });
           fetchStock(tokenNo);
         });
@@ -261,25 +302,12 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
     );
   }
 
-  const totalDeliveryQty = Array.from(selectedItems).reduce(
-    (sum, idx) => sum + (deliveryQty[idx] || 0),
-    0
-  );
-  {
-    /* Compute valid state for button */
-  }
-  const isDeliveryValid =
-    selectedItems.size > 0 &&
-    totalDeliveryQty > 0 &&
-    Array.from(selectedItems).every((idx) => (deliveryQty[idx] || 0) > 0);
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Stock Table - Left Side */}
         <div className="bg-white dark:bg-gray-900 rounded-lg border-b border-l border-r border-gray-300 dark:border-gray-800">
-          <div className=" bg-slate-500 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            {/* Left side */}
+          <div className="bg-slate-500 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-6 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h2 className="font-semibold text-white dark:text-white">
                 Stock Items
@@ -289,9 +317,8 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
               </p>
             </div>
 
-            {/* Right side */}
             <div className="text-right">
-              <p className="text-sm  text-white dark:text-white">
+              <p className="text-sm text-white dark:text-white">
                 Customer Name: {stock[0]?.customer_name || "-"}
               </p>
               <p className="text-xs text-white dark:text-gray-400">
@@ -312,9 +339,6 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
                       className="w-4 h-4 cursor-pointer"
                     />
                   </th>
-                  {/* <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold">
-                    Customer
-                  </th> */}
                   <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold">
                     Unit
                   </th>
@@ -349,7 +373,6 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
                       <tr
                         key={idx}
                         onClick={(e) => {
-                          // prevent double-trigger when clicking on input
                           if (
                             (e.target as HTMLElement).tagName !== "INPUT" &&
                             (e.target as HTMLElement).tagName !== "BUTTON"
@@ -369,7 +392,7 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
                             checked={isSelected}
                             onChange={() => handleSelectItem(idx)}
                             className="w-4 h-4 cursor-pointer"
-                            onClick={(e) => e.stopPropagation()} // avoid row toggle twice
+                            onClick={(e) => e.stopPropagation()}
                           />
                         </td>
 
@@ -400,12 +423,11 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
                         <td className="px-4 py-3 text-center">
                           <input
                             type="number"
-                            min={0} // allow typing 0 temporarily
+                            min={0}
                             max={item.number_of_sacks}
                             value={deliveryQty[idx]}
                             onChange={(e) => {
                               const rawValue = e.target.value;
-                              // allow empty string for editing
                               const numValue =
                                 rawValue === ""
                                   ? ""
@@ -417,7 +439,6 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
                             }}
                             onBlur={() => {
                               if (!deliveryQty[idx] || deliveryQty[idx] === 0) {
-                                // reset to initial quantity on blur
                                 setDeliveryQty((prev) => ({
                                   ...prev,
                                   [idx]: initialDeliveryQtyRef.current[idx],
@@ -441,49 +462,98 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
         <div className="space-y-6">
           {/* Summary Card */}
           <div className="bg-white dark:bg-gray-900 rounded-lg border-b border-l border-r border-gray-300 dark:border-gray-800">
-            <div className="border-b bg-stone-500 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-4 py-2.5">
+            <div className="border-b bg-stone-500 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-4 py-3">
               <h3 className="font-semibold text-white dark:text-white">
                 Summary
               </h3>
             </div>
 
-            <div className="p-3 grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Pockets Selected
-                </p>
-                <p className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
-                  {selectedItems.size}
-                </p>
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Pockets Selected:{" "}
+                    <span className="ml-2 text-base font-semibold text-gray-900 dark:text-white leading-tight">
+                      {selectedItems.size}
+                    </span>
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Total Delivery Qty:{" "}
+                    <span className="ml-2 text-base font-semibold text-gray-900 dark:text-white leading-tight">
+                      {totalDeliveryQty} sacks
+                    </span>
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Total Delivery Qty
-                </p>
-                <p className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
-                  {totalDeliveryQty} sacks
-                </p>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Loan Pay
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {charges.xpayloan || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Transportation Fee
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {charges.xchgtot}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Empty Sacks ({charges.xemptysacks} × {emptySackPrice})
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {emptySacksCharge}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Total Fanning Charge ({totalDeliveryQty} ×{" "}
+                    {charges.xfanchgtpersack})
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {totalFanningCharge}
+                  </span>
+                </div>
+
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2 flex justify-between items-center text-sm font-semibold">
+                  <span className="text-gray-900 dark:text-white">
+                    Subtotal
+                  </span>
+                  <span className="text-lg text-gray-900 dark:text-white">
+                    {subtotal}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Charges */}
           <div className="bg-white dark:bg-gray-900 rounded-lg border-b border-l border-r border-gray-300 dark:border-gray-800">
-            <div className="border-b bg-zinc-600 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-6 py-4">
+            <div className="border-b bg-zinc-600 dark:bg-gray-600 rounded-t-lg border-gray-300 dark:border-gray-800 px-6 py-3">
               <h2 className="font-semibold text-white dark:text-white">
                 Charges & Deductions
               </h2>
             </div>
 
-            <div className="p-4 grid grid-cols-2 gap-3">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Loan Pay
+                  Loan Pay <span className="">(Taka)</span>
                 </label>
                 <input
                   type="number"
-                  value={charges.xpayloan}
+                  value={charges.xpayloan || ""}
                   onChange={(e) =>
                     handleChargeChange("xpayloan", e.target.value)
                   }
@@ -494,11 +564,11 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
 
               <div>
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Empty Sacks
+                  Empty Sacks <span className="">(Pcs)</span>
                 </label>
                 <input
                   type="number"
-                  value={charges.xemptysacks}
+                  value={charges.xemptysacks || ""}
                   onChange={(e) =>
                     handleChargeChange("xemptysacks", e.target.value)
                   }
@@ -509,13 +579,13 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
 
               <div>
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Empty Sacks Price
+                  Interest Rate <span className="">(%)</span>
                 </label>
                 <input
                   type="number"
-                  value={charges.xemptysackschgtot}
+                  value={charges.xinterestrate || ""}
                   onChange={(e) =>
-                    handleChargeChange("xemptysackschgtot", e.target.value)
+                    handleChargeChange("xinterestrate", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
                   placeholder="0"
@@ -524,26 +594,11 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
 
               <div>
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Interest Amount
+                  Transportation Fee <span className="">(Taka)</span>
                 </label>
                 <input
                   type="number"
-                  value={charges.xinterestamt}
-                  onChange={(e) =>
-                    handleChargeChange("xinterestamt", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Transportation Fee
-                </label>
-                <input
-                  type="number"
-                  value={charges.xchgtot}
+                  value={charges.xchgtot || ""}
                   onChange={(e) =>
                     handleChargeChange("xchgtot", e.target.value)
                   }
@@ -554,13 +609,13 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
 
               <div>
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Fanning Charge
+                  Fanning Charge Per Sack <span className="">(Taka)</span>
                 </label>
                 <input
                   type="number"
-                  value={charges.xfanchgtot}
+                  value={charges.xfanchgtpersack || ""}
                   onChange={(e) =>
-                    handleChargeChange("xfanchgtot", e.target.value)
+                    handleChargeChange("xfanchgtpersack", e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
                   placeholder="0"
@@ -570,7 +625,7 @@ const handleDeliveryQtyChange = (idx: number, value: string) => {
               <button
                 onClick={handleConfirmDelivery}
                 disabled={submitting || !isDeliveryValid}
-                className="col-span-2 bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800  disabled:bg-gray-400  dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition"
+                className="col-span-1 sm:col-span-2 lg:col-span-3 bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition"
               >
                 {submitting ? "Submitting..." : "Confirm Delivery"}
               </button>
