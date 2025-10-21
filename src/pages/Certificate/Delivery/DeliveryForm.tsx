@@ -63,6 +63,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
   });
 
   const [emptySackPrice, setEmptySackPrice] = useState<number>(0);
+  const [rentPerSack, setRentPerSack] = useState<number>(0);
 
   useEffect(() => {
     const token = window.localStorage.getItem("jwtToken");
@@ -83,7 +84,22 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
         setEmptySackPrice(0);
       }
     };
+    const fetchRentPerSack = async () => {
+      try {
+        const res = await axios.get(
+          `${api.base}/masterdata/rate/all-rent/RENT_PER_SACK/`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data.success && res.data.data?.xrate) {
+          setRentPerSack(res.data.data.xrate);
+        }
+      } catch (err) {
+        console.error("Failed to fetch RENT_PER_SACK", err);
+        setRentPerSack(0);
+      }
+    };
     fetchEmptySackPrice();
+    fetchRentPerSack();
   }, []);
 
   const fetchStock = async (tokenNo: string) => {
@@ -186,12 +202,14 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
 
   const totalFanningCharge = totalDeliveryQty * charges.xfanchgtpersack;
   const emptySacksCharge = charges.xemptysacks * emptySackPrice;
+  const rentTotal = totalDeliveryQty * rentPerSack;
   const subtotal =
     charges.xpayloan +
     emptySacksCharge +
     // charges.xinterestrate +
     charges.xchgtot +
-    totalFanningCharge;
+    totalFanningCharge +
+    rentTotal;
 
   const isDeliveryValid =
     selectedItems.size > 0 &&
@@ -232,11 +250,15 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
           token_no: tokenNo,
           delivery_items: deliveryItems,
           xpayloan: Number(charges.xpayloan) || 0,
-          xemptysacks: Number(charges.xemptysacks) || 0,
-          xemptysackschgtot: Number(emptySackPrice) || 0,
-          xinterestrate: Number(charges.xinterestrate) || 0,
+          xemptysack: Number(charges.xemptysacks) || 0,
+          xemptsrate: Number(emptySackPrice) || 0,
+          xemptysackchgtot: Number(emptySacksCharge) || 0,
+          xinterest: Number(charges.xinterestrate) || 0,
           xchgtot: Number(charges.xchgtot) || 0,
-          xfanchgtpersack: Number(charges.xfanchgtpersack) || 0,
+          xfanchg: Number(charges.xfanchgtpersack) || 0,
+          xdtwotax: Number(rentTotal) || 0,
+          xrate: Number(rentPerSack) || 0,
+          xlineamt: Number(subtotal) || 0,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -490,6 +512,15 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
               </div>
 
               <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Rent Total ({totalDeliveryQty} × {rentPerSack})
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {rentTotal}
+                  </span>
+                </div>
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-700 dark:text-gray-300">
                     Loan Pay
