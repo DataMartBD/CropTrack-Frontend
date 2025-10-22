@@ -23,6 +23,7 @@ import ExchangePage from "./pages/Certificate/Exchange/Exchange";
 import DeliveryPage from "./pages/Certificate/Delivery/Delivery";
 import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
 import AgentDatabase from "./pages/MasterData/AgentDatabase";
+import RateSetup from "./pages/MasterData/RateSetup";
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
                 element={<CustomerDatabase />}
               />
               <Route path="/masterdata/agent" element={<AgentDatabase />} />
+              <Route path="/masterdata/rate-setup" element={<RateSetup />} />
             </Route>
           </Route>
 

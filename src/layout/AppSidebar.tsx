@@ -125,6 +125,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcPackage />,
         path: "/masterdata/agent",
       },
+      {
+        name: "Rate Setup",
+        icon: <FcPackage />,
+        path: "/masterdata/rate-setup",
+      },
     ],
   },
 ];
