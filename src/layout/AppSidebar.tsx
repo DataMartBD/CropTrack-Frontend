@@ -11,6 +11,8 @@ import {
   FcPortraitMode,
   // FcShipped,
   FcBookmark,
+  FcOvertime,
+  FcCalculator,
 } from "react-icons/fc";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -129,6 +131,17 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         name: "Rate Setup",
         icon: <FcPackage />,
         path: "/masterdata/rate-setup",
+      },
+    ],
+  },
+  {
+    name: "Accounts",
+    icon: <FcCalculator />,
+    subItems: [
+      {
+        name: "Loan Management",
+        icon: <FcOvertime />,
+        path: "/accounts/loanm",
       },
     ],
   },

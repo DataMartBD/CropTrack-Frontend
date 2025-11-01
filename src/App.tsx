@@ -24,6 +24,7 @@ import DeliveryPage from "./pages/Certificate/Delivery/Delivery";
 import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
 import AgentDatabase from "./pages/MasterData/AgentDatabase";
 import RateSetup from "./pages/MasterData/RateSetup";
+import LoanManagement from "./pages/Accounts/LoanManagement";
 
 export default function App() {
   return (
@@ -56,6 +57,7 @@ export default function App() {
               />
               <Route path="/masterdata/agent" element={<AgentDatabase />} />
               <Route path="/masterdata/rate-setup" element={<RateSetup />} />
+              <Route path="/accounts/loanm" element={<LoanManagement />} />
             </Route>
           </Route>
 
