@@ -38,6 +38,13 @@ export default function LoanManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const handlePagination = (action: () => void) => {
+    action();
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   const [customersData, setCustomersData] = useState<CustomerModel[]>([]);
   const [agentsData, setAgentsData] = useState<CustomerModel[]>([]);
@@ -328,6 +335,122 @@ export default function LoanManagement() {
             </table>
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {!isLoading && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                onClick={() => handlePagination(() => table.setPageIndex(0))}
+                disabled={!table.getCanPreviousPage()}
+                title="First Page"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <button
+                className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                onClick={() => handlePagination(() => table.previousPage())}
+                disabled={!table.getCanPreviousPage()}
+                title="Previous Page"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <span className="px-2 text-sm text-gray-700 dark:text-gray-300">
+                Page{" "}
+                <span className="font-medium">
+                  {table.getState().pagination.pageIndex + 1}
+                </span>{" "}
+                of <span className="font-medium">{table.getPageCount()}</span>
+              </span>
+              <button
+                className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                onClick={() => handlePagination(() => table.nextPage())}
+                disabled={!table.getCanNextPage()}
+                title="Next Page"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+              <button
+                className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                onClick={() =>
+                  handlePagination(() =>
+                    table.setPageIndex(table.getPageCount() - 1)
+                  )
+                }
+                disabled={!table.getCanNextPage()}
+                title="Last Page"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+            <select
+              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value));
+              }}
+            >
+              {[10, 20, 30, 40, 50].map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  Show {pageSize}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Create Loan Modal */}
         <Modal
