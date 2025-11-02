@@ -8,9 +8,14 @@ import Label from "../../../components/form/Label";
 // import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import SearchableSelect from "../../../components/ui/ut/SearchableSelect";
-import type { LoanModel, CustomerModel, LoanForm } from "./types";
+import type {
+  LoanModel,
+  CustomerModel,
+  LoanForm,
+  CertificateModel,
+} from "./types";
 import { numberToWords } from "./helper";
-import { fetchData, postData } from "../../../services/apiClient";
+import { getData, postData, putData } from "../../../services/apiClient";
 
 import {
   useReactTable,
@@ -27,17 +32,13 @@ import { Spinner } from "../../../components/ui/ut/Spinner";
 export default function LoanManagement() {
   //   const navigate = useNavigate();
 
-  const certificateNumbers = [
-    { value: "C001", label: "Certificate 001" },
-    { value: "C002", label: "Certificate 002" },
-    { value: "C003", label: "Certificate 003" },
-  ];
-
   const [loanListData, setLoanListData] = useState<LoanModel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLoan, setEditingLoan] = useState<LoanModel | null>(null);
   const handlePagination = (action: () => void) => {
     action();
     window.scrollTo({
@@ -48,21 +49,45 @@ export default function LoanManagement() {
 
   const [customersData, setCustomersData] = useState<CustomerModel[]>([]);
   const [agentsData, setAgentsData] = useState<CustomerModel[]>([]);
+  const [certificatesData, setCertificatesData] = useState<CertificateModel[]>(
+    []
+  );
+
+  const loadCertificatesForReference = async (customerCode: string) => {
+    if (!customerCode) {
+      setCertificatesData([]);
+      return;
+    }
+
+    console.log("Fetching certificates for customer:", customerCode);
+
+    try {
+      const certificates: CertificateModel[] = await getData(
+        `/ops/certificates/list/`,
+        { customer_code: customerCode }
+      );
+      console.log("Loaded certificates:", certificates);
+      setCertificatesData(certificates);
+    } catch (err) {
+      console.error("Failed to load certificates:", err);
+      setCertificatesData([]);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const loanData: LoanModel[] = await fetchData("/accounts/loan/list/");
+        const loanData: LoanModel[] = await getData("/accounts/loan/list/");
         setLoanListData(loanData);
 
-        const customers: CustomerModel[] = await fetchData(
+        const customers: CustomerModel[] = await getData(
           "/masterdata/customers/list/",
           { customer_type: "Farmer" }
         );
         setCustomersData(customers);
 
-        const agents: CustomerModel[] = await fetchData(
+        const agents: CustomerModel[] = await getData(
           "/masterdata/customers/list/",
           { customer_type: "Agent" }
         );
@@ -90,6 +115,7 @@ export default function LoanManagement() {
   };
 
   const [newLoan, setNewLoan] = useState<LoanForm>(initialLoanState);
+  const [editLoan, setEditLoan] = useState<LoanForm>(initialLoanState);
 
   const resetForm = () => setNewLoan(initialLoanState);
 
@@ -99,12 +125,128 @@ export default function LoanManagement() {
     >
   ) => {
     const { name, value } = e.target;
-    setNewLoan((prev) => ({ ...prev, [name]: value }));
+
+    // If loan_type changes, reset xref and certificate_no
+    if (name === "loan_type") {
+      setNewLoan(
+        (prev) =>
+          ({
+            ...prev,
+            [name]: value,
+            xref: "",
+            certificate_no: "",
+          } as LoanForm)
+      );
+      setCertificatesData([]); // Clear certificates
+    } else {
+      setNewLoan((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
     resetForm();
+  };
+
+  const handleOpenEditModal = async (loan: LoanModel) => {
+    console.log("Opening edit modal for loan:", loan);
+
+    setEditingLoan(loan);
+
+    // Infer loan_type if not provided by API
+    const inferredLoanType =
+      loan.loan_type || (loan.certificate_no ? "CERTIFICATE" : "ADVANCE");
+
+    // Set form data
+    setEditLoan({
+      loan_type: inferredLoanType,
+      xref: loan.xref || "",
+      certificate_no: loan.certificate_no || "",
+      xamount: loan.xamount?.toString() || "",
+      interest_rate: loan.interest_rate?.toString() || "",
+      interest_frequency: loan.interest_frequency || "",
+      payment_type: loan.payment_type || "",
+      payment_method: loan.payment_method || "",
+      xnote: loan.xnote || "",
+    });
+
+    console.log("Edit form data:", {
+      loan_type: inferredLoanType,
+      xref: loan.xref,
+      certificate_no: loan.certificate_no,
+    });
+
+    // Load certificates if it's a certificate loan
+    if (inferredLoanType === "CERTIFICATE" && loan.xref) {
+      console.log("Loading certificates for:", loan.xref);
+      await loadCertificatesForReference(loan.xref);
+    }
+
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingLoan(null);
+    setEditLoan(initialLoanState);
+  };
+
+  const handleEditInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+
+    // If loan_type changes, reset xref and certificate_no
+    if (name === "loan_type") {
+      setEditLoan(
+        (prev) =>
+          ({
+            ...prev,
+            [name]: value,
+            xref: "",
+            certificate_no: "",
+          } as LoanForm)
+      ); // assert correct type
+      setCertificatesData([]);
+    } else {
+      setEditLoan((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleUpdateLoan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !editLoan.loan_type ||
+      !editLoan.xref ||
+      (editLoan.loan_type === "CERTIFICATE" && !editLoan.certificate_no) ||
+      !editLoan.xamount ||
+      !editLoan.interest_rate
+    ) {
+      Swal.fire("Warning", "Please fill all required fields.", "warning");
+      return;
+    }
+    try {
+      await putData(`/accounts/loan/update/${editingLoan?.xtrnnum}/`, {
+        ...editLoan,
+        xamount: parseFloat(editLoan.xamount),
+        interest_rate: parseFloat(editLoan.interest_rate),
+      });
+
+      Swal.fire("Success", "Loan updated successfully!", "success");
+      handleCloseEditModal();
+
+      // Reload data
+      const loanData: LoanModel[] = await getData("/accounts/loan/list/");
+      setLoanListData(loanData);
+    } catch (err: any) {
+      Swal.fire(
+        "Error",
+        err.response?.data?.message || "Failed to update loan.",
+        "error"
+      );
+    }
   };
 
   const filteredLoanListData = useMemo(() => {
@@ -195,7 +337,10 @@ export default function LoanManagement() {
           <div className="flex gap-2">
             {info.row.original.xstatus !== "POSTED" && (
               <>
-                <button className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]">
+                <button
+                  onClick={() => handleOpenEditModal(info.row.original)}
+                  className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+                >
                   <FcEditImage size={20} /> Edit
                 </button>
                 <button className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]">
@@ -240,7 +385,7 @@ export default function LoanManagement() {
       });
       Swal.fire("Success", "Loan created successfully!", "success");
       handleCloseCreateModal();
-      const loanData: LoanModel[] = await fetchData("/accounts/loan/list/");
+      const loanData: LoanModel[] = await getData("/accounts/loan/list/");
       setLoanListData(loanData);
     } catch (err: any) {
       Swal.fire(
@@ -464,7 +609,7 @@ export default function LoanManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-1">
-                    Create New Loan
+                    New Loan
                   </h2>
                   <p className="text-sm text-emerald-100">
                     Fill out the form below to create a new loan record
@@ -505,7 +650,7 @@ export default function LoanManagement() {
                     value={newLoan.loan_type}
                     onChange={handleCreateInputChange}
                     required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                    className="w-full text-sm  px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   >
                     <option value="">Select loan type</option>
                     <option value="CERTIFICATE">Certificate Loan</option>
@@ -528,12 +673,18 @@ export default function LoanManagement() {
                         : []
                     }
                     value={newLoan.xref}
-                    onChange={(val) =>
-                      setNewLoan((prev) => ({ ...prev, xref: val }))
-                    }
+                    onChange={(val) => {
+                      setNewLoan((prev) => ({
+                        ...prev,
+                        xref: val,
+                        certificate_no: "", // Clear certificate when changing reference
+                      }));
+                      if (newLoan.loan_type === "CERTIFICATE") {
+                        loadCertificatesForReference(val);
+                      }
+                    }}
                     placeholder="Search customer or agent..."
                     disabled={!newLoan.loan_type}
-                    // optional: customize how an option is displayed
                     labelRenderer={(opt) => (
                       <span className="flex items-center gap-2">
                         <span className="font-medium">{opt.customer_code}</span>
@@ -559,9 +710,9 @@ export default function LoanManagement() {
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                     >
                       <option value="">Select certificate</option>
-                      {certificateNumbers.map((cert) => (
-                        <option key={cert.value} value={cert.value}>
-                          {cert.label}
+                      {certificatesData.map((cert) => (
+                        <option key={cert.token_no} value={cert.token_no}>
+                          {cert.token_no}
                         </option>
                       ))}
                     </select>
@@ -692,6 +843,256 @@ export default function LoanManagement() {
                   className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#13725A] transition-all shadow-sm"
                 >
                   Create Loan
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
+
+        {/* Edit Loan Modal */}
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          className="max-w-[750px] m-4"
+        >
+          <div className="relative w-full rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-zinc-600 to-zinc-800 px-8 py-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">
+                    Edit Loan
+                  </h2>
+                  <p className="text-sm text-white">
+                    Update loan information for {editingLoan?.xtrnnum}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-all"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleUpdateLoan} className="px-8 py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Loan Type */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Loan Type <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="loan_type"
+                    value={editLoan.loan_type}
+                    onChange={handleEditInputChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  >
+                    <option value="">Select loan type</option>
+                    <option value="CERTIFICATE">Certificate Loan</option>
+                    <option value="ADVANCE">Advance Loan</option>
+                  </select>
+                </div>
+
+                {/* Reference */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Reference <span className="text-red-500">*</span>
+                  </Label>
+
+                  <SearchableSelect
+                    options={
+                      editLoan.loan_type === "CERTIFICATE"
+                        ? customersData
+                        : editLoan.loan_type === "ADVANCE"
+                        ? agentsData
+                        : []
+                    }
+                    value={editLoan.xref}
+                    onChange={(val) => {
+                      setEditLoan((prev) => ({
+                        ...prev,
+                        xref: val,
+                        certificate_no: "", // Clear certificate when changing reference
+                      }));
+                      if (editLoan.loan_type === "CERTIFICATE") {
+                        loadCertificatesForReference(val);
+                      }
+                    }}
+                    placeholder="Search customer or agent..."
+                    disabled={!editLoan.loan_type}
+                    labelRenderer={(opt) => (
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">{opt.customer_code}</span>
+                        <span className="text-gray-500">
+                          — {opt.customer_name}
+                        </span>
+                      </span>
+                    )}
+                  />
+                </div>
+
+                {/* Certificate Number (only for CERTIFICATE loans) */}
+                {editLoan.loan_type === "CERTIFICATE" && (
+                  <div>
+                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Certificate Number <span className="text-red-500">*</span>
+                    </Label>
+                    <select
+                      name="certificate_no"
+                      value={editLoan.certificate_no}
+                      onChange={handleEditInputChange}
+                      required
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                    >
+                      <option value="">Select certificate</option>
+                      {certificatesData.map((cert) => (
+                        <option key={cert.token_no} value={cert.token_no}>
+                          {cert.token_no}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Amount */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Loan Amount <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    name="xamount"
+                    value={editLoan.xamount}
+                    onChange={handleEditInputChange}
+                    placeholder="0.00"
+                    min="0"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+
+                {/* Interest Rate */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Interest Rate (%) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    name="interest_rate"
+                    value={editLoan.interest_rate}
+                    onChange={handleEditInputChange}
+                    placeholder="0.00"
+                    min="0"
+                    max="100"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+
+                {/* Interest Frequency */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Interest Frequency <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="interest_frequency"
+                    value={editLoan.interest_frequency}
+                    onChange={handleEditInputChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  >
+                    <option value="">Select frequency</option>
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
+                  </select>
+                </div>
+
+                {/* Payment Type */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Type <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="payment_type"
+                    value={editLoan.payment_type}
+                    onChange={handleEditInputChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  >
+                    <option value="">Select payment type</option>
+                    <option value="PRINCIPAL">Principal</option>
+                    <option value="INTEREST">Interest</option>
+                    <option value="FEES">Fees</option>
+                  </select>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Method <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="payment_method"
+                    value={editLoan.payment_method}
+                    onChange={handleEditInputChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  >
+                    <option value="">Select payment method</option>
+                    <option value="CASH">Cash</option>
+                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                    <option value="CHECK">Check</option>
+                    <option value="MFS">Mobile Financial Service</option>
+                  </select>
+                </div>
+
+                {/* Note */}
+                <div className="md:col-span-2">
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Additional Notes
+                  </Label>
+                  <textarea
+                    name="xnote"
+                    value={editLoan.xnote}
+                    onChange={handleEditInputChange}
+                    rows={3}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm resize-none"
+                    placeholder="Enter any additional notes or comments..."
+                  />
+                </div>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="px-6 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#13725A] transition-all shadow-sm"
+                >
+                  Update Loan
                 </button>
               </div>
             </form>

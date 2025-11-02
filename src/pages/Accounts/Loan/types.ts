@@ -8,6 +8,10 @@ export interface LoanModel {
   interest_rate: string;
   xnote: string;
   xstatus: string;
+  loan_type: "CERTIFICATE" | "ADVANCE" | "";
+  interest_frequency: "Monthly" | "Weekly" | "Daily" | "Yearly" | "";
+  payment_type: "PRINCIPAL" | "INTEREST" | "FEES" | "";
+  payment_method: "CASH" | "BANK_TRANSFER" | "CHECK" | "MFS" | "";
 }
 
 export interface CustomerModel {
@@ -41,3 +45,10 @@ export type LoanForm = {
   payment_method: "CASH" | "BANK_TRANSFER" | "CHECK" | "MFS" | "";
   xnote: string;
 };
+
+export interface CertificateModel {
+  created_at: string;
+  updated_at: string;
+  booking_no: string;
+  token_no: string;
+}
