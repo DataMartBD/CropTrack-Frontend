@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import PageMeta from "../../components/common/PageMeta";
-import { Modal } from "../../components/ui/modal";
-import Input from "../../components/form/input/InputField";
-import Label from "../../components/form/Label";
-import axios from "axios";
+import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
+import PageMeta from "../../../components/common/PageMeta";
+import { Modal } from "../../../components/ui/modal";
+import Input from "../../../components/form/input/InputField";
+import Label from "../../../components/form/Label";
 // import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
+import SearchableSelect from "../../../components/ui/ut/SearchableSelect";
+import type { LoanModel, CustomerModel, LoanForm } from "./types";
+import { numberToWords } from "./helper";
+import { fetchData, postData } from "../../../services/apiClient";
 
 import {
   useReactTable,
@@ -19,118 +22,10 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { FcEditImage, FcOk, FcPlus } from "react-icons/fc";
-
-const api = {
-  base: import.meta.env.VITE_API_BASE_URL,
-};
-
-interface LoanModel {
-  xtrnnum: string;
-  xref: string;
-  certificate_no: string;
-  disbursement_date: string;
-  interest_date: number;
-  xamount: string;
-  interest_rate: string;
-  xnote: string;
-  xstatus: string;
-}
-
-type LoanForm = {
-  loan_type: "CERTIFICATE" | "ADVANCE" | "";
-  xref: string;
-  certificate_no: string;
-  xamount: string;
-  interest_rate: string;
-  interest_frequency: "Monthly" | "Weekly" | "Daily" | "Yearly" | "";
-  payment_type: "PRINCIPAL" | "INTEREST" | "FEES" | "";
-  payment_method: "CASH" | "BANK_TRANSFER" | "CHECK" | "MFS" | "";
-  xnote: string;
-};
-
-function numberToWords(num: number): string {
-  const a = [
-    "",
-    "One",
-    "Two",
-    "Three",
-    "Four",
-    "Five",
-    "Six",
-    "Seven",
-    "Eight",
-    "Nine",
-    "Ten",
-    "Eleven",
-    "Twelve",
-    "Thirteen",
-    "Fourteen",
-    "Fifteen",
-    "Sixteen",
-    "Seventeen",
-    "Eighteen",
-    "Nineteen",
-  ];
-  const b = [
-    "",
-    "",
-    "Twenty",
-    "Thirty",
-    "Forty",
-    "Fifty",
-    "Sixty",
-    "Seventy",
-    "Eighty",
-    "Ninety",
-  ];
-
-  if (num === 0) return "Zero";
-
-  function inWords(n: number): string {
-    if (n < 20) return a[n];
-    if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
-    if (n < 1000)
-      return (
-        a[Math.floor(n / 100)] +
-        " Hundred" +
-        (n % 100 ? " " + inWords(n % 100) : "")
-      );
-    if (n < 100000)
-      return (
-        inWords(Math.floor(n / 1000)) +
-        " Thousand" +
-        (n % 1000 ? " " + inWords(n % 1000) : "")
-      );
-    if (n < 10000000)
-      return (
-        inWords(Math.floor(n / 100000)) +
-        " Lakh" +
-        (n % 100000 ? " " + inWords(n % 100000) : "")
-      );
-    return (
-      inWords(Math.floor(n / 10000000)) +
-      " Crore" +
-      (n % 10000000 ? " " + inWords(n % 10000000) : "")
-    );
-  }
-
-  return inWords(num);
-}
+import { Spinner } from "../../../components/ui/ut/Spinner";
 
 export default function LoanManagement() {
   //   const navigate = useNavigate();
-
-  const customers = [
-    { value: "U001", label: "User 001" },
-    { value: "U002", label: "User 002" },
-    { value: "U003", label: "User 003" },
-  ];
-
-  const agents = [
-    { value: "A001", label: "Agent 001" },
-    { value: "A002", label: "Agent 002" },
-    { value: "A003", label: "Agent 003" },
-  ];
 
   const certificateNumbers = [
     { value: "C001", label: "Certificate 001" },
@@ -143,6 +38,37 @@ export default function LoanManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const [customersData, setCustomersData] = useState<CustomerModel[]>([]);
+  const [agentsData, setAgentsData] = useState<CustomerModel[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const loanData: LoanModel[] = await fetchData("/accounts/loan/list/");
+        setLoanListData(loanData);
+
+        const customers: CustomerModel[] = await fetchData(
+          "/masterdata/customers/list/",
+          { customer_type: "Farmer" }
+        );
+        setCustomersData(customers);
+
+        const agents: CustomerModel[] = await fetchData(
+          "/masterdata/customers/list/",
+          { customer_type: "Agent" }
+        );
+        setAgentsData(agents);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const initialLoanState: LoanForm = {
     loan_type: "",
@@ -174,9 +100,6 @@ export default function LoanManagement() {
     resetForm();
   };
 
-//   // Reference options based on loan_type
-//   const xrefOptions = newLoan.loan_type === "CERTIFICATE" ? customers : agents;
-
   const filteredLoanListData = useMemo(() => {
     if (!searchQuery.trim()) return loanListData;
 
@@ -198,7 +121,7 @@ export default function LoanManagement() {
       }),
       columnHelper.accessor("certificate_no", {
         header: "Certificate",
-        cell: (info) => info.getValue(),
+        cell: (info) => info.getValue() || "N/A",
       }),
       columnHelper.accessor("disbursement_date", {
         header: "Disbursement Date",
@@ -227,7 +150,7 @@ export default function LoanManagement() {
       }),
       columnHelper.accessor("xnote", {
         header: "Remarks",
-        cell: (info) => info.getValue(),
+        cell: (info) => info.getValue() || "N/A",
       }),
       columnHelper.accessor("xstatus", {
         header: "Status",
@@ -290,31 +213,12 @@ export default function LoanManagement() {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  useEffect(() => {
-    const token = localStorage.getItem("jwtToken");
-    const fetchLoanListData = async () => {
-      setIsLoading(true);
-      try {
-        const res = await axios.get(`${api.base}/accounts/loan/list/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setLoanListData(res.data.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchLoanListData();
-  }, []);
-
   const handleCreateLoan = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem("jwtToken");
     if (
       !newLoan.loan_type ||
       !newLoan.xref ||
-      !newLoan.certificate_no ||
+      (newLoan.loan_type === "CERTIFICATE" && !newLoan.certificate_no) ||
       !newLoan.xamount ||
       !newLoan.interest_rate
     ) {
@@ -322,21 +226,15 @@ export default function LoanManagement() {
       return;
     }
     try {
-      await axios.post(
-        `${api.base}/accounts/loan/create/`,
-        {
-          ...newLoan,
-          xamount: parseFloat(newLoan.xamount),
-          interest_rate: parseFloat(newLoan.interest_rate),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await postData("/accounts/loan/create/", {
+        ...newLoan,
+        xamount: parseFloat(newLoan.xamount),
+        interest_rate: parseFloat(newLoan.interest_rate),
+      });
       Swal.fire("Success", "Loan created successfully!", "success");
       handleCloseCreateModal();
-      const res = await axios.get(`${api.base}/accounts/loan/list/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setLoanListData(res.data.data);
+      const loanData: LoanModel[] = await fetchData("/accounts/loan/list/");
+      setLoanListData(loanData);
     } catch (err: any) {
       Swal.fire(
         "Error",
@@ -373,7 +271,7 @@ export default function LoanManagement() {
           </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 rounded-md bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-md bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
           >
             <FcPlus size={18} /> Create Loan
           </button>
@@ -381,50 +279,54 @@ export default function LoanManagement() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px]">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr
-                  key={headerGroup.id}
-                  className="border-b border-gray-200 bg-zinc-500 text-white"
-                >
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-2 text-left text-sm font-medium cursor-pointer"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {{
-                        asc: " 🔼",
-                        desc: " 🔽",
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="bg-white dark:bg-transparent">
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className="px-6 py-4 text-sm text-gray-800 dark:text-gray-100"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            <table className="w-full min-w-[700px]">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr
+                    key={headerGroup.id}
+                    className="border-b border-gray-200 bg-zinc-500 text-white"
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-2 text-left text-sm font-medium cursor-pointer"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: " 🔼",
+                          desc: " 🔽",
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="bg-white dark:bg-transparent">
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="px-6 py-4 text-sm text-gray-800 dark:text-gray-100"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Create Loan Modal */}
@@ -493,26 +395,31 @@ export default function LoanManagement() {
                   <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Reference <span className="text-red-500">*</span>
                   </Label>
-                  <select
-                    name="xref"
+
+                  <SearchableSelect
+                    options={
+                      newLoan.loan_type === "CERTIFICATE"
+                        ? customersData
+                        : newLoan.loan_type === "ADVANCE"
+                        ? agentsData
+                        : []
+                    }
                     value={newLoan.xref}
-                    onChange={handleCreateInputChange}
-                    required
+                    onChange={(val) =>
+                      setNewLoan((prev) => ({ ...prev, xref: val }))
+                    }
+                    placeholder="Search customer or agent..."
                     disabled={!newLoan.loan_type}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Select reference</option>
-                    {(newLoan.loan_type === "CERTIFICATE"
-                      ? customers
-                      : newLoan.loan_type === "ADVANCE"
-                      ? agents
-                      : []
-                    ).map((ref) => (
-                      <option key={ref.value} value={ref.value}>
-                        {ref.label}
-                      </option>
-                    ))}
-                  </select>
+                    // optional: customize how an option is displayed
+                    labelRenderer={(opt) => (
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">{opt.customer_code}</span>
+                        <span className="text-gray-500">
+                          — {opt.customer_name}
+                        </span>
+                      </span>
+                    )}
+                  />
                 </div>
 
                 {/* Certificate Number (only for CERTIFICATE loans) */}
@@ -549,9 +456,8 @@ export default function LoanManagement() {
                     value={newLoan.xamount}
                     onChange={handleCreateInputChange}
                     placeholder="0.00"
-                    step="0.01"
+                    // step="0.01"
                     min="0"
-                    required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
@@ -567,10 +473,9 @@ export default function LoanManagement() {
                     value={newLoan.interest_rate}
                     onChange={handleCreateInputChange}
                     placeholder="0.00"
-                    step="0.01"
+                    // step="0.01"
                     min="0"
                     max="100"
-                    required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   />
                 </div>

@@ -24,7 +24,7 @@ import DeliveryPage from "./pages/Certificate/Delivery/Delivery";
 import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
 import AgentDatabase from "./pages/MasterData/AgentDatabase";
 import RateSetup from "./pages/MasterData/RateSetup";
-import LoanManagement from "./pages/Accounts/LoanManagement";
+import LoanManagement from "./pages/Accounts/Loan/LoanManagement";
 
 export default function App() {
   return (
