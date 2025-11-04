@@ -237,45 +237,71 @@ export default function Level1Group() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
           Level 1 Groups
         </h2>
-        <div className="relative w-64">
-          <input
-            type="search"
-            className="w-full rounded-lg border border-gray-300 bg-white dark:bg-gray-800 p-2 text-gray-800 dark:text-gray-100"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+
+        <div className="flex items-center gap-3">
+          {/* Search Input with Icon */}
+          <div className="relative">
+            <input
+              type="search"
+              className="w-48 rounded-lg border border-gray-300 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+              placeholder="Search groups..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <svg
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+
+          {/* Add Button */}
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:ring-offset-2 transition-colors"
+          >
+            <FcPlus size={16} />
+            New Group
+          </button>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-md bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
-        >
-          <FcPlus size={18} /> New Group
-        </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         {isLoading ? (
           <Spinner />
         ) : (
           <table className="w-full">
-            {" "}
-            {/* Remove min-width and use simple w-full */}
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr
                   key={headerGroup.id}
-                  className="border-b border-gray-200 bg-[#13725A] text-white"
+                  className="border-b border-gray-200 bg-zinc-500 text-white"
                 >
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers.map((header, index) => (
                     <th
                       key={header.id}
-                      className="px-6 py-2 text-left text-sm font-medium cursor-pointer"
+                      className={`
+                  px-6 py-2 text-left text-sm font-medium cursor-pointer
+                  ${index === 0 ? "rounded-tl-lg" : ""}
+                  ${
+                    index === headerGroup.headers.length - 1
+                      ? "rounded-tr-lg"
+                      : ""
+                  }
+                `}
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       {flexRender(
@@ -297,7 +323,7 @@ export default function Level1Group() {
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-6 py-4 text-sm text-gray-800 dark:text-gray-100"
+                      className="px-6 py-2 text-sm text-gray-800 dark:text-gray-100"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
