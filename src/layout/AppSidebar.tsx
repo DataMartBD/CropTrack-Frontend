@@ -132,6 +132,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcPackage />,
         path: "/masterdata/rate-setup",
       },
+      {
+        name: "Accounts Group",
+        icon: <FcPackage />,
+        path: "/masterdata/acc-group",
+      },
     ],
   },
   {

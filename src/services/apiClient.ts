@@ -49,3 +49,18 @@ export async function putData<T, U>(
   });
   return response.data;
 }
+
+// DELETE
+export async function deleteData<U>(
+  endpoint: string,
+  params: Record<string, any> = {}
+): Promise<U> {
+  const token = window.localStorage.getItem("jwtToken");
+  const response = await axios.delete(`${apiBase}${endpoint}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params,
+  });
+  return response.data;
+}
