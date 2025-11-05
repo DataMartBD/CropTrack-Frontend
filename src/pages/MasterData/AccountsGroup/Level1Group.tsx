@@ -5,7 +5,7 @@ import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
 import Swal from "sweetalert2";
 
-import type { Level1Model, Level1Form } from "./types";
+import type { Level1Model, Level1Form, Level1GroupProps } from "./types";
 
 import {
   getData,
@@ -24,10 +24,11 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 
-import { FcAddRow, FcDeleteRow, FcPlus } from "react-icons/fc";
+import { FcPlus } from "react-icons/fc";
+import { FiEdit, FiDelete, FiLogIn } from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 
-export default function Level1Group() {
+export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
   const [l1Groups, setL1Groups] = useState<Level1Model[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -196,7 +197,6 @@ export default function Level1Group() {
         header: "Code",
         cell: (info) => info.getValue(),
       }),
-
       columnHelper.accessor("xdesc", {
         header: "Description",
         cell: (info) => info.getValue() || "N/A",
@@ -208,21 +208,32 @@ export default function Level1Group() {
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => handleOpenEditModal(info.row.original)}
-              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-amber-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              title="Edit"
             >
-              <FcAddRow size={20} /> Edit
+              <FiEdit size={18} />
             </button>
             <button
               onClick={() => handleDeleteGroup(info.row.original.xhrc1)}
-              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-red-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              title="Delete"
             >
-              <FcDeleteRow size={20} /> Delete
+              <FiDelete size={18} />
             </button>
+            {onNavigateToLevel2 && (
+              <button
+                onClick={() => onNavigateToLevel2(info.row.original.xhrc1)}
+                className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-blue-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+                title="Level 2"
+              >
+                <FiLogIn size={18} />
+              </button>
+            )}
           </div>
         ),
       }),
     ],
-    []
+    [onNavigateToLevel2]
   );
 
   const table = useReactTable({

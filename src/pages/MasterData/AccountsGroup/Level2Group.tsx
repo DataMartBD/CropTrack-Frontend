@@ -5,7 +5,12 @@ import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
 import Swal from "sweetalert2";
 
-import type { Level1Model, Level2Model, Level2Form } from "./types";
+import type {
+  Level1Model,
+  Level2Model,
+  Level2Form,
+  Level2GroupProps,
+} from "./types";
 
 import {
   getData,
@@ -24,13 +29,19 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 
-import { FcAddRow, FcDeleteRow, FcPlus } from "react-icons/fc";
+import { FcPlus } from "react-icons/fc";
+import { FiEdit, FiDelete, FiLogIn } from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 
-export default function Level2Group() {
+export default function Level2Group({
+  preselectedLevel1,
+  onNavigateToLevel3,
+}: Level2GroupProps) {
   const [l1Groups, setL1Groups] = useState<Level1Model[]>([]);
   const [l2Groups, setL2Groups] = useState<Level2Model[]>([]);
-  const [selectedLevel1, setSelectedLevel1] = useState<string>("");
+  const [selectedLevel1, setSelectedLevel1] = useState<string>(
+    preselectedLevel1 || ""
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingL1, setIsLoadingL1] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +51,37 @@ export default function Level2Group() {
   const [editingL2Group, setEditingL2Group] = useState<Level2Model | null>(
     null
   );
+
+  useEffect(() => {
+    if (preselectedLevel1) {
+      setSelectedLevel1(preselectedLevel1);
+    }
+  }, [preselectedLevel1]);
+
+  useEffect(() => {
+    const loadLevel2Data = async () => {
+      if (!selectedLevel1) {
+        setL2Groups([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const l2GroupsData: Level2Model[] = await getData(
+          `/accounts/level-2/${selectedLevel1}/`
+        );
+        setL2Groups(l2GroupsData);
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Failed to load Level 2 groups", "error");
+        setL2Groups([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLevel2Data();
+  }, [selectedLevel1]);
 
   const handlePagination = (action: () => void) => {
     action();
@@ -283,16 +325,32 @@ export default function Level2Group() {
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => handleOpenEditModal(info.row.original)}
-              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-amber-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              title="Edit"
             >
-              <FcAddRow size={20} /> Edit
+              <FiEdit size={18} />
             </button>
             <button
               onClick={() => handleDeleteGroup(info.row.original)}
-              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-red-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              title="Delete"
             >
-              <FcDeleteRow size={20} /> Delete
+              <FiDelete size={18} />
             </button>
+            {onNavigateToLevel3 && (
+              <button
+                onClick={() =>
+                  onNavigateToLevel3(
+                    info.row.original.xhrc1,
+                    info.row.original.xhrc2
+                  )
+                }
+                className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-blue-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+                title="Go to Level 3"
+              >
+                <FiLogIn size={18} />
+              </button>
+            )}
           </div>
         ),
       }),
