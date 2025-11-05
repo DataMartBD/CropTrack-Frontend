@@ -24,8 +24,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 
-import { FcPlus } from "react-icons/fc";
-import { FiEdit, FiTrash2, FiArrowRightCircle } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiArrowRightCircle, FiPlusCircle } from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 
 export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
@@ -280,7 +279,7 @@ export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:ring-offset-2 transition-colors"
           >
-            <FcPlus size={16} />
+            <FiPlusCircle size={18} />
             New Group
           </button>
         </div>

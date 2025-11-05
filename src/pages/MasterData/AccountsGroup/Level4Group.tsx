@@ -31,8 +31,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 
-import { FcPlus } from "react-icons/fc";
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiPlusCircle, FiTrash2 } from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 
 export default function Level4Group({
@@ -555,7 +554,7 @@ export default function Level4Group({
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:ring-offset-2 transition-colors"
             disabled={!selectedLevel1 || !selectedLevel2 || !selectedLevel3}
           >
-            <FcPlus size={16} />
+            <FiPlusCircle size={18} />
             New Group
           </button>
         </div>
