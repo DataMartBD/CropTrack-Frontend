@@ -129,7 +129,7 @@ export default function AccountsGroupBase() {
                   ${
                     activeTab === tab.id
                       ? "text-[#13725A] border-b-4 border-[#13725A] font-semibold"
-                      : "text-gray-600 dark:text-gray-400 hover:text-[#13725A] bg-white dark:bg-gray-800"
+                      : "text-gray-600 dark:text-gray-400 hover:text-[#13725A] bg-gray-100 dark:bg-gray-800"
                   }`}
               >
                 {tab.label}

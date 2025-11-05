@@ -24,7 +24,12 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 
-import { FiEdit, FiTrash2, FiArrowRightCircle, FiPlusCircle } from "react-icons/fi";
+import {
+  FiEdit,
+  FiTrash2,
+  FiArrowRightCircle,
+  FiPlusCircle,
+} from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 
 export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
@@ -295,7 +300,7 @@ export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr
                   key={headerGroup.id}
-                  className="border-b border-gray-200 bg-zinc-500 text-white"
+                  className="border-b border-gray-200 bg-zinc-500 dark:bg-slate-700 text-white"
                 >
                   {headerGroup.headers.map((header, index) => (
                     <th

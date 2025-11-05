@@ -584,7 +584,7 @@ export default function Level4Group({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
                     key={headerGroup.id}
-                    className="border-b border-gray-200 bg-zinc-500 text-white"
+                    className="border-b border-gray-200 bg-zinc-500 dark:bg-slate-700 text-white"
                   >
                     {headerGroup.headers.map((header, index) => (
                       <th
