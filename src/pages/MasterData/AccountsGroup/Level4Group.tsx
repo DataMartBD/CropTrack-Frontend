@@ -61,9 +61,6 @@ export default function Level4Group({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingL4Group, setEditingL4Group] = useState<Level4Model | null>(
-    null
-  );
 
   // Handle preselected levels
   useEffect(() => {
@@ -280,7 +277,6 @@ export default function Level4Group({
   };
 
   const handleOpenEditModal = (group: Level4Model) => {
-    setEditingL4Group(group);
     setEditL4G({
       xhrc4: group.xhrc4 || "",
       xdesc: group.xdesc || "",
@@ -293,7 +289,7 @@ export default function Level4Group({
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
-    setEditingL4Group(null);
+
     setEditL4G(initialL4GState);
   };
 

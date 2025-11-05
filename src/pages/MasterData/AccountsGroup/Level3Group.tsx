@@ -55,9 +55,7 @@ export default function Level3Group({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingL3Group, setEditingL3Group] = useState<Level3Model | null>(
-    null
-  );
+
 
   // Handle preselected levels
   useEffect(() => {
@@ -226,7 +224,7 @@ export default function Level3Group({
   };
 
   const handleOpenEditModal = (group: Level3Model) => {
-    setEditingL3Group(group);
+
     setEditL3G({
       xhrc3: group.xhrc3 || "",
       xdesc: group.xdesc || "",
@@ -238,7 +236,7 @@ export default function Level3Group({
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
-    setEditingL3Group(null);
+
     setEditL3G(initialL3GState);
   };
 

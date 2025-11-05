@@ -35,9 +35,7 @@ export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingL1Group, setEditingL1Group] = useState<Level1Model | null>(
-    null
-  );
+
   const handlePagination = (action: () => void) => {
     action();
     window.scrollTo({
@@ -92,7 +90,6 @@ export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
   };
 
   const handleOpenEditModal = (group: Level1Model) => {
-    setEditingL1Group(group);
     setEditL1G({
       xhrc1: group.xhrc1 || "",
       xdesc: group.xdesc || "",
@@ -102,7 +99,7 @@ export default function Level1Group({ onNavigateToLevel2 }: Level1GroupProps) {
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
-    setEditingL1Group(null);
+
     setEditL1G(initialL1GState);
   };
 

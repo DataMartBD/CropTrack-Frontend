@@ -48,9 +48,7 @@ export default function Level2Group({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingL2Group, setEditingL2Group] = useState<Level2Model | null>(
-    null
-  );
+
 
   useEffect(() => {
     if (preselectedLevel1) {
@@ -192,7 +190,7 @@ export default function Level2Group({
   };
 
   const handleOpenEditModal = (group: Level2Model) => {
-    setEditingL2Group(group);
+
     setEditL2G({
       xhrc2: group.xhrc2 || "",
       xdesc: group.xdesc || "",
@@ -203,7 +201,7 @@ export default function Level2Group({
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
-    setEditingL2Group(null);
+
     setEditL2G(initialL2GState);
   };
 
