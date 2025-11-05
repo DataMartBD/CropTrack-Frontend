@@ -31,7 +31,7 @@ import {
 } from "@tanstack/react-table";
 
 import { FcPlus } from "react-icons/fc";
-import { FiEdit, FiDelete, FiLogIn } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiArrowRightCircle } from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 
 export default function Level3Group({
@@ -364,20 +364,20 @@ export default function Level3Group({
         id: "actions",
         header: () => <div className="text-right">Actions</div>,
         cell: (info) => (
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-1 justify-end">
             <button
               onClick={() => handleOpenEditModal(info.row.original)}
-              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-amber-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              className="flex px-1 py-1 text-sm rounded-sm hover:text-amber-600"
               title="Edit"
             >
               <FiEdit size={18} />
             </button>
             <button
               onClick={() => handleDeleteGroup(info.row.original)}
-              className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-red-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              className="flex px-1 py-1 text-sm rounded-sm hover:text-red-600"
               title="Delete"
             >
-              <FiDelete size={18} />
+              <FiTrash2 size={18} />
             </button>
             {onNavigateToLevel4 && (
               <button
@@ -388,10 +388,10 @@ export default function Level3Group({
                     info.row.original.xhrc3
                   )
                 }
-                className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-blue-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+                className="flex px-1 py-1 text-sm rounded-sm  hover:text-blue-600"
                 title="Go to Level 4"
               >
-                <FiLogIn size={18} />
+                <FiArrowRightCircle size={18} />
               </button>
             )}
           </div>
