@@ -13,6 +13,9 @@ import {
   FcBookmark,
   FcOvertime,
   FcCalculator,
+  FcParallelTasks,
+  FcFlowChart,
+  FcBullish,
 } from "react-icons/fc";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -132,11 +135,6 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcPackage />,
         path: "/masterdata/rate-setup",
       },
-      {
-        name: "Accounts Group",
-        icon: <FcPackage />,
-        path: "/masterdata/acc-group",
-      },
     ],
   },
   {
@@ -147,6 +145,16 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         name: "Loan Management",
         icon: <FcOvertime />,
         path: "/accounts/loanm",
+      },
+      {
+        name: "Chart of Accounts",
+        icon: <FcBullish />,
+        path: "/accounts/loanm",
+      },
+      {
+        name: "Accounts Group",
+        icon: <FcParallelTasks />,
+        path: "/accounts/group",
       },
     ],
   },

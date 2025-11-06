@@ -25,7 +25,7 @@ import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
 import AgentDatabase from "./pages/MasterData/AgentDatabase";
 import RateSetup from "./pages/MasterData/RateSetup";
 import LoanManagement from "./pages/Accounts/Loan/LoanManagement";
-import AccountsGroupBase from "./pages/MasterData/AccountsGroup/AccountsGroupBase";
+import AccountsGroupBase from "./pages/Accounts/AccountsGroup/AccountsGroupBase";
 
 export default function App() {
   return (
@@ -58,10 +58,7 @@ export default function App() {
               />
               <Route path="/masterdata/agent" element={<AgentDatabase />} />
               <Route path="/masterdata/rate-setup" element={<RateSetup />} />
-              <Route
-                path="/masterdata/acc-group"
-                element={<AccountsGroupBase />}
-              />
+              <Route path="/accounts/group" element={<AccountsGroupBase />} />
               <Route path="/accounts/loanm" element={<LoanManagement />} />
             </Route>
           </Route>
