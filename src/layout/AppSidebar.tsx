@@ -14,7 +14,6 @@ import {
   FcOvertime,
   FcCalculator,
   FcParallelTasks,
-  FcFlowChart,
   FcBullish,
 } from "react-icons/fc";
 
@@ -149,7 +148,7 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
       {
         name: "Chart of Accounts",
         icon: <FcBullish />,
-        path: "/accounts/loanm",
+        path: "/accounts/chart-of-accounts",
       },
       {
         name: "Accounts Group",
