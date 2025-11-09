@@ -5,17 +5,25 @@ import PageMeta from "../../../components/common/PageMeta";
 import AccountsGroupTree from "./AccountsGroupTree";
 import ControllerAccounts from "./ControllerAccounts";
 import SubAccounts from "./SubAccounts";
+import { AccountsGroup } from "./types";
 
 export default function ChartOfAccountsBase() {
   const [activeTab, setActiveTab] = useState<"controller" | "subaccount">(
     "controller"
   );
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroupData, setSelectedGroupData] =
+    useState<AccountsGroup | null>(null);
 
   const tabs = [
     { id: "controller", label: "Controller Account" },
     { id: "subaccount", label: "Sub Account" },
   ];
+
+  const handleSelectGroup = (groupId: string, groupData: AccountsGroup) => {
+    setSelectedGroup(groupId);
+    setSelectedGroupData(groupData);
+  };
 
   return (
     <div>
@@ -26,24 +34,22 @@ export default function ChartOfAccountsBase() {
       <PageBreadcrumb pageTitle="Chart of Accounts" />
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4 sm:p-6">
-        {/* Header */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <h3 className="font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-xl">
             Chart of Accounts Setup
           </h3>
-        </div>
+        </div> */}
 
-        {/* Main Content Area */}
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Sidebar - Accounts Group Tree (20%) */}
+          {/* Left Sidebar */}
           <div className="lg:w-1/5">
             <AccountsGroupTree
               selectedGroup={selectedGroup}
-              onSelectGroup={setSelectedGroup}
+              onSelectGroup={handleSelectGroup}
             />
           </div>
 
-          {/* Right Content Area (80%) */}
+          {/* Right Content Area */}
           <div className="lg:w-4/5">
             <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               {/* Tabs */}
@@ -69,7 +75,9 @@ export default function ChartOfAccountsBase() {
 
               {/* Tab Content */}
               <div className="p-6">
-                {activeTab === "controller" && <ControllerAccounts />}
+                {activeTab === "controller" && (
+                  <ControllerAccounts selectedGroup={selectedGroupData} />
+                )}
                 {activeTab === "subaccount" && <SubAccounts />}
               </div>
             </div>
