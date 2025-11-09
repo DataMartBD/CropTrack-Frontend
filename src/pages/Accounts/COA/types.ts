@@ -18,8 +18,8 @@ export interface AccountsGroupTreeProps {
 
 export interface ControllerAccountsProps {
   selectedGroup: AccountsGroup | null;
+  onSwitchToSubAccount?: (controllerAccount: ControllerAccountModel) => void;
 }
-
 export interface ControllerAccountModel {
   pk: string;
   xacc: string;
@@ -62,3 +62,22 @@ export interface ControllerAccountForm {
   xhrc5: string;
   zactive: boolean;
 }
+
+export interface SubAccountModel {
+  pk: [number, string, string];
+  xacc: string;
+  xsub: string;
+  xdesc: string;
+  created_at: string;
+  updated_at: string;
+  business_id: number;
+  created_by: number | null;
+  updated_by: number | null;
+}
+
+export interface SubAccountForm {
+  xacc: string; 
+  xsub: string; 
+  xdesc: string;
+}
+

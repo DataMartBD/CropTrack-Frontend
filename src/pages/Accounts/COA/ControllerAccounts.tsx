@@ -22,7 +22,6 @@ import { FiEdit, FiTrash2, FiPlusCircle } from "react-icons/fi";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 import { useEffect, useMemo, useState } from "react";
 import { Modal } from "../../../components/ui/modal";
-import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
 import Swal from "sweetalert2";
 
@@ -33,9 +32,11 @@ import type {
   Level3Model,
   Level4Model,
 } from "../AccountsGroup/types";
+import { LuFolderTree } from "react-icons/lu";
 
 export default function ControllerAccounts({
   selectedGroup,
+  onSwitchToSubAccount,
 }: ControllerAccountsProps) {
   const [controllerAccounts, setControllerAccounts] = useState<
     ControllerAccountModel[]
@@ -46,7 +47,7 @@ export default function ControllerAccounts({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Hierarchical level states - always used for creation
+  // Hierarchical level states - for create modal
   const [l1Groups, setL1Groups] = useState<Level1Model[]>([]);
   const [l2Groups, setL2Groups] = useState<Level2Model[]>([]);
   const [l3Groups, setL3Groups] = useState<Level3Model[]>([]);
@@ -59,6 +60,12 @@ export default function ControllerAccounts({
   const [isLoadingL2, setIsLoadingL2] = useState(false);
   const [isLoadingL3, setIsLoadingL3] = useState(false);
   const [isLoadingL4, setIsLoadingL4] = useState(false);
+
+  // Hierarchical level states - for edit modal
+  const [editSelectedLevel1, setEditSelectedLevel1] = useState<string>("");
+  const [editSelectedLevel2, setEditSelectedLevel2] = useState<string>("");
+  const [editSelectedLevel3, setEditSelectedLevel3] = useState<string>("");
+  const [editSelectedLevel4, setEditSelectedLevel4] = useState<string>("");
 
   // Dropdown options
   const accountTypeOptions = [
@@ -108,7 +115,7 @@ export default function ControllerAccounts({
   const [editControllerAccount, setEditControllerAccount] =
     useState<ControllerAccountForm>(initialControllerAccountState);
 
-  // Load Level 1 groups
+  // Load L1 Groups
   useEffect(() => {
     const loadLevel1Data = async () => {
       setIsLoadingL1(true);
@@ -126,7 +133,7 @@ export default function ControllerAccounts({
     loadLevel1Data();
   }, []);
 
-  // Load Level 2 groups when Level 1 is selected
+  // Load L2 Groups for create modal
   useEffect(() => {
     const loadLevel2Data = async () => {
       if (!selectedLevel1) {
@@ -154,7 +161,7 @@ export default function ControllerAccounts({
     loadLevel2Data();
   }, [selectedLevel1]);
 
-  // Load Level 3 groups when Level 2 is selected
+  // Load L3 Groups for create modal
   useEffect(() => {
     const loadLevel3Data = async () => {
       if (!selectedLevel1 || !selectedLevel2) {
@@ -182,7 +189,7 @@ export default function ControllerAccounts({
     loadLevel3Data();
   }, [selectedLevel1, selectedLevel2]);
 
-  // Load Level 4 groups when Level 3 is selected
+  // Load L4 Groups for create modal
   useEffect(() => {
     const loadLevel4Data = async () => {
       if (!selectedLevel1 || !selectedLevel2 || !selectedLevel3) {
@@ -210,7 +217,93 @@ export default function ControllerAccounts({
     loadLevel4Data();
   }, [selectedLevel1, selectedLevel2, selectedLevel3]);
 
-  // Reset form when modal opens
+  // Load L2 Groups for edit modal
+  useEffect(() => {
+    const loadEditLevel2Data = async () => {
+      if (!editSelectedLevel1) {
+        setL2Groups([]);
+        return;
+      }
+
+      setIsLoadingL2(true);
+      try {
+        const l2GroupsData: Level2Model[] = await getData(
+          `/accounts/level-2/${editSelectedLevel1}/`
+        );
+        setL2Groups(l2GroupsData);
+      } catch (err) {
+        console.error(err);
+        setL2Groups([]);
+      } finally {
+        setIsLoadingL2(false);
+      }
+    };
+
+    if (isEditModalOpen) {
+      loadEditLevel2Data();
+    }
+  }, [editSelectedLevel1, isEditModalOpen]);
+
+  // Load L3 Groups for edit modal
+  useEffect(() => {
+    const loadEditLevel3Data = async () => {
+      if (!editSelectedLevel1 || !editSelectedLevel2) {
+        setL3Groups([]);
+        return;
+      }
+
+      setIsLoadingL3(true);
+      try {
+        const l3GroupsData: Level3Model[] = await getData(
+          `/accounts/level-3/${editSelectedLevel1}/${editSelectedLevel2}/`
+        );
+        setL3Groups(l3GroupsData);
+      } catch (err) {
+        console.error(err);
+        setL3Groups([]);
+      } finally {
+        setIsLoadingL3(false);
+      }
+    };
+
+    if (isEditModalOpen) {
+      loadEditLevel3Data();
+    }
+  }, [editSelectedLevel1, editSelectedLevel2, isEditModalOpen]);
+
+  // Load L4 Groups for edit modal
+  useEffect(() => {
+    const loadEditLevel4Data = async () => {
+      if (!editSelectedLevel1 || !editSelectedLevel2 || !editSelectedLevel3) {
+        setL4Groups([]);
+        return;
+      }
+
+      setIsLoadingL4(true);
+      try {
+        const l4GroupsData: Level4Model[] = await getData(
+          `/accounts/level-4/${editSelectedLevel1}/${editSelectedLevel2}/${editSelectedLevel3}/`
+        );
+        setL4Groups(l4GroupsData);
+      } catch (err) {
+        console.error(err);
+        setL4Groups([]);
+      } finally {
+        setIsLoadingL4(false);
+      }
+    };
+
+    if (isEditModalOpen) {
+      loadEditLevel4Data();
+    }
+  }, [
+    editSelectedLevel1,
+    editSelectedLevel2,
+    editSelectedLevel3,
+    isEditModalOpen,
+  ]);
+
+  // Reset form when create modal opens
   useEffect(() => {
     if (isCreateModalOpen) {
       resetForm();
@@ -267,7 +360,6 @@ export default function ControllerAccounts({
     setSelectedLevel2("");
     setSelectedLevel3("");
     setSelectedLevel4("");
-    // Update form state
     setNewControllerAccount((prev) => ({
       ...prev,
       xhrc1: value,
@@ -282,7 +374,6 @@ export default function ControllerAccounts({
     setSelectedLevel2(value);
     setSelectedLevel3("");
     setSelectedLevel4("");
-    // Update form state
     setNewControllerAccount((prev) => ({
       ...prev,
       xhrc2: value,
@@ -295,7 +386,6 @@ export default function ControllerAccounts({
     const value = e.target.value;
     setSelectedLevel3(value);
     setSelectedLevel4("");
-    // Update form state
     setNewControllerAccount((prev) => ({
       ...prev,
       xhrc3: value,
@@ -306,8 +396,55 @@ export default function ControllerAccounts({
   const handleLevel4Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedLevel4(value);
-    // Update form state
     setNewControllerAccount((prev) => ({
+      ...prev,
+      xhrc4: value,
+    }));
+  };
+
+  const handleEditLevel1Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setEditSelectedLevel1(value);
+    setEditSelectedLevel2("");
+    setEditSelectedLevel3("");
+    setEditSelectedLevel4("");
+    setEditControllerAccount((prev) => ({
+      ...prev,
+      xhrc1: value,
+      xhrc2: "",
+      xhrc3: "",
+      xhrc4: "",
+    }));
+  };
+
+  const handleEditLevel2Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setEditSelectedLevel2(value);
+    setEditSelectedLevel3("");
+    setEditSelectedLevel4("");
+    setEditControllerAccount((prev) => ({
+      ...prev,
+      xhrc2: value,
+      xhrc3: "",
+      xhrc4: "",
+    }));
+  };
+
+  const handleEditLevel3Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setEditSelectedLevel3(value);
+    setEditSelectedLevel4("");
+    setEditControllerAccount((prev) => ({
+      ...prev,
+      xhrc3: value,
+      xhrc4: "",
+    }));
+  };
+
+  const handleEditLevel4Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setEditSelectedLevel4(value);
+    setEditControllerAccount((prev) => ({
       ...prev,
       xhrc4: value,
     }));
@@ -333,12 +470,23 @@ export default function ControllerAccounts({
       xhrc5: account.xhrc5 || "",
       zactive: account.zactive || true,
     });
+
+    // Set the hierarchical levels for edit modal
+    setEditSelectedLevel1(account.xhrc1 || "");
+    setEditSelectedLevel2(account.xhrc2 || "");
+    setEditSelectedLevel3(account.xhrc3 || "");
+    setEditSelectedLevel4(account.xhrc4 || "");
+
     setIsEditModalOpen(true);
   };
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditControllerAccount(initialControllerAccountState);
+    setEditSelectedLevel1("");
+    setEditSelectedLevel2("");
+    setEditSelectedLevel3("");
+    setEditSelectedLevel4("");
   };
 
   const handleCreateAccount = async (e: React.FormEvent) => {
@@ -348,9 +496,9 @@ export default function ControllerAccounts({
     if (
       !newControllerAccount.xacc ||
       !newControllerAccount.xdesc ||
-      newControllerAccount.xacctype ||
-      newControllerAccount.xaccusage ||
-      newControllerAccount.xaccsource
+      !newControllerAccount.xacctype ||
+      !newControllerAccount.xaccusage ||
+      !newControllerAccount.xaccsource
     ) {
       Swal.fire("Warning", "Please fill all required fields.", "warning");
       return;
@@ -372,8 +520,6 @@ export default function ControllerAccounts({
     }
 
     try {
-      // console.log("Creating account with data:", newControllerAccount);
-
       await postData("/accounts/chartofaccounts/", newControllerAccount);
       Swal.fire(
         "Success",
@@ -393,8 +539,8 @@ export default function ControllerAccounts({
 
   const handleUpdateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editControllerAccount.xacc || !editControllerAccount.xdesc) {
-      Swal.fire("Warning", "Please fill all required fields.", "warning");
+    if (!editControllerAccount.xdesc) {
+      Swal.fire("Warning", "Please fill Description field.", "warning");
       return;
     }
     try {
@@ -466,7 +612,7 @@ export default function ControllerAccounts({
       const queryString = params.toString() ? `?${params.toString()}` : "";
       const url = `/accounts/chartofaccounts/${queryString}`;
 
-      console.log("Loading controller accounts with URL:", url);
+      // console.log("Loading controller accounts with URL:", url);
 
       const controllerAccs: ControllerAccountModel[] = await getData(url);
       setControllerAccounts(controllerAccs);
@@ -518,10 +664,6 @@ export default function ControllerAccounts({
         header: "Source",
         cell: (info) => info.getValue() || "N/A",
       }),
-      // columnHelper.accessor("xaccgroup", {
-      //   header: "Account Group",
-      //   cell: (info) => info.getValue() || "N/A",
-      // }),
       columnHelper.accessor("zactive", {
         header: "Status",
         cell: (info) => (
@@ -539,24 +681,37 @@ export default function ControllerAccounts({
       columnHelper.display({
         id: "actions",
         header: () => <div className="text-right">Actions</div>,
-        cell: (info) => (
-          <div className="flex gap-1 justify-end">
-            <button
-              onClick={() => handleOpenEditModal(info.row.original)}
-              className="flex px-1 py-1 text-sm rounded-sm hover:text-amber-600"
-              title="Edit"
-            >
-              <FiEdit size={18} />
-            </button>
-            <button
-              onClick={() => handleDeleteAccount(info.row.original.xacc)}
-              className="flex px-1 py-1 text-sm rounded-sm hover:text-red-600"
-              title="Delete"
-            >
-              <FiTrash2 size={18} />
-            </button>
-          </div>
-        ),
+        cell: (info) => {
+          const account = info.row.original;
+          const isSubaccount = account.xaccsource === "Subaccount";
+          return (
+            <div className="flex gap-1 justify-end">
+              {isSubaccount && (
+                <button
+                  onClick={() => onSwitchToSubAccount?.(account)}
+                  className="flex px-1 py-1 text-sm rounded-sm hover:text-blue-600"
+                  title="Open Sub Accounts"
+                >
+                  <LuFolderTree size={18} />
+                </button>
+              )}
+              <button
+                onClick={() => handleOpenEditModal(info.row.original)}
+                className="flex px-1 py-1 text-sm rounded-sm hover:text-amber-600"
+                title="Edit"
+              >
+                <FiEdit size={18} />
+              </button>
+              <button
+                onClick={() => handleDeleteAccount(info.row.original.xacc)}
+                className="flex px-1 py-1 text-sm rounded-sm hover:text-red-600"
+                title="Delete"
+              >
+                <FiTrash2 size={18} />
+              </button>
+            </div>
+          );
+        },
       }),
     ],
     []
@@ -631,7 +786,7 @@ export default function ControllerAccounts({
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:ring-offset-2 transition-colors"
           >
             <FiPlusCircle size={18} />
-            Add Controller Account
+            Controller Account
           </button>
         </div>
       </div>
@@ -695,6 +850,122 @@ export default function ControllerAccounts({
         )}
       </div>
 
+      {/* Pagination Controls */}
+      {!isLoading && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              onClick={() => handlePagination(() => table.setPageIndex(0))}
+              disabled={!table.getCanPreviousPage()}
+              title="First Page"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <button
+              className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              onClick={() => handlePagination(() => table.previousPage())}
+              disabled={!table.getCanPreviousPage()}
+              title="Previous Page"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <span className="px-2 text-sm text-gray-700 dark:text-gray-300">
+              Page{" "}
+              <span className="font-medium">
+                {table.getState().pagination.pageIndex + 1}
+              </span>{" "}
+              of <span className="font-medium">{table.getPageCount()}</span>
+            </span>
+            <button
+              className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              onClick={() => handlePagination(() => table.nextPage())}
+              disabled={!table.getCanNextPage()}
+              title="Next Page"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+            <button
+              className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              onClick={() =>
+                handlePagination(() =>
+                  table.setPageIndex(table.getPageCount() - 1)
+                )
+              }
+              disabled={!table.getCanNextPage()}
+              title="Last Page"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+          <select
+            className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => {
+              table.setPageSize(Number(e.target.value));
+            }}
+          >
+            {[10, 20, 30, 40, 50].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Create Controller Account Modal */}
       <Modal
         isOpen={isCreateModalOpen}
@@ -753,14 +1024,6 @@ export default function ControllerAccounts({
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A] resize-none"
                       placeholder="Enter account code"
                     />
-                    {/* <Input
-                      type="text"
-                      name="xacc"
-                      value={newControllerAccount.xacc}
-                      onChange={handleCreateInputChange}
-                      placeholder="Enter account code"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
-                    /> */}
                   </div>
                 </div>
 
@@ -975,6 +1238,300 @@ export default function ControllerAccounts({
                 className="px-4 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg transition-colors"
               >
                 Create Account
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+
+      {/* Edit Controller Account Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        className="max-w-4xl m-4"
+      >
+        <div className="relative w-full rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  Edit Controller Account
+                </h2>
+                <p className="text-xs text-amber-100 mt-1">
+                  Update controller account details
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-1 transition-all"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={handleUpdateAccount} className="px-6 py-4">
+            <div className="space-y-4">
+              {/* Main Account Details - 3 Columns */}
+              <div className="grid grid-cols-3 gap-4">
+                {/* Column 1: Account Code (Read-only) */}
+                <div className="space-y-3">
+                  <div>
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Account Code
+                    </Label>
+                    <div className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                      {editControllerAccount.xacc}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Account code cannot be changed
+                    </p>
+                  </div>
+                </div>
+
+                {/* Columns 2-3: Description spanning 2 columns */}
+                <div className="col-span-2 space-y-3">
+                  <div>
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Description <span className="text-red-500">*</span>
+                    </Label>
+                    <textarea
+                      name="xdesc"
+                      value={editControllerAccount.xdesc}
+                      onChange={handleEditInputChange}
+                      rows={1}
+                      required
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A] resize-none"
+                      placeholder="Enter account description"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Type, Usage & Source - 3 Columns */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Type <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="xacctype"
+                    value={editControllerAccount.xacctype}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                  >
+                    {accountTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Usage <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="xaccusage"
+                    value={editControllerAccount.xaccusage}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                  >
+                    {accountUsageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Source <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    name="xaccsource"
+                    value={editControllerAccount.xaccsource}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                  >
+                    {accountSourceOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Account Group Assignment for Edit - ALWAYS show all 4 levels */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Account Group Assignment{" "}
+                  <span className="text-red-500">*</span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    (Select at least one level)
+                  </span>
+                </Label>
+
+                <div className="grid grid-cols-4 gap-3">
+                  {/* Level 1 */}
+                  <div>
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Level 1
+                    </Label>
+                    <div className="relative">
+                      <select
+                        value={editSelectedLevel1}
+                        onChange={handleEditLevel1Change}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                        disabled={isLoadingL1}
+                      >
+                        <option value="">Select Level 1</option>
+                        {l1Groups.map((group) => (
+                          <option key={group.xhrc1} value={group.xhrc1}>
+                            {group.xhrc1} - {group.xdesc}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingL1 && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <div className="w-3 h-3 border-2 border-dotted border-gray-300 border-t-[#13725A] rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Level 2 */}
+                  <div>
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Level 2
+                    </Label>
+                    <div className="relative">
+                      <select
+                        value={editSelectedLevel2}
+                        onChange={handleEditLevel2Change}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                        disabled={!editSelectedLevel1 || isLoadingL2}
+                      >
+                        <option value="">Select Level 2</option>
+                        {l2Groups.map((group) => (
+                          <option key={group.xhrc2} value={group.xhrc2}>
+                            {group.xhrc2} - {group.xdesc}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingL2 && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <div className="w-3 h-3 border-2 border-dotted border-gray-300 border-t-[#13725A] rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Level 3 */}
+                  <div>
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Level 3
+                    </Label>
+                    <div className="relative">
+                      <select
+                        value={editSelectedLevel3}
+                        onChange={handleEditLevel3Change}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                        disabled={!editSelectedLevel2 || isLoadingL3}
+                      >
+                        <option value="">Select Level 3</option>
+                        {l3Groups.map((group) => (
+                          <option key={group.xhrc3} value={group.xhrc3}>
+                            {group.xhrc3} - {group.xdesc}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingL3 && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <div className="w-3 h-3 border-2 border-dotted border-gray-300 border-t-[#13725A] rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Level 4 */}
+                  <div>
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Level 4
+                    </Label>
+                    <div className="relative">
+                      <select
+                        value={editSelectedLevel4}
+                        onChange={handleEditLevel4Change}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#13725A]"
+                        disabled={!editSelectedLevel3 || isLoadingL4}
+                      >
+                        <option value="">Select Level 4</option>
+                        {l4Groups.map((group) => (
+                          <option key={group.xhrc4} value={group.xhrc4}>
+                            {group.xhrc4} - {group.xdesc}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingL4 && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <div className="w-3 h-3 border-2 border-dotted border-gray-300 border-t-[#13725A] rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Checkbox */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Account Status
+                </Label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="zactive"
+                    checked={editControllerAccount.zactive}
+                    onChange={handleEditInputChange}
+                    className="rounded border-gray-300 text-[#13725A] focus:ring-[#13725A]"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                    Active Account
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
+              >
+                Update Account
               </button>
             </div>
           </form>
