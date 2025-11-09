@@ -22,18 +22,19 @@ export default function ChartOfAccountsBase() {
     { id: "subaccount", label: "Sub Account" },
   ];
 
-  const handleSelectGroup = (groupId: string, groupData: AccountsGroup) => {
+  const handleSelectGroup = (
+    groupId: string | null,
+    groupData: AccountsGroup | null
+  ) => {
     setSelectedGroup(groupId);
     setSelectedGroupData(groupData);
   };
 
-  // Function to switch to subaccount tab with controller account
   const switchToSubAccount = (controllerAccount: ControllerAccountModel) => {
     setSelectedControllerAccount(controllerAccount);
     setActiveTab("subaccount");
   };
 
-  // Function to switch back to controller accounts
   const switchToControllerAccount = () => {
     setActiveTab("controller");
     setSelectedControllerAccount(null);

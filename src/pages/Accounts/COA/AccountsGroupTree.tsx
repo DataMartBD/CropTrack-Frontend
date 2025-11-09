@@ -1,4 +1,3 @@
-// AccountsGroupTree.tsx
 import { useState, useEffect } from "react";
 import { getData } from "../../../services/apiClient";
 import { FiPlus, FiMinus } from "react-icons/fi";
@@ -48,16 +47,15 @@ export default function AccountsGroupTree({
     return group.xhrc4 || group.xhrc3 || group.xhrc2 || group.xhrc1 || "";
   };
 
-const handleGroupClick = (group: AccountsGroup) => {
-  const groupId = getGroupId(group);
-  
-  if (selectedGroup === groupId) {
-    onSelectGroup(null, null);
-  } else {
-    // Pass the ID as string but also pass the full group data
-    onSelectGroup(groupId, group);
-  }
-};
+  const handleGroupClick = (group: AccountsGroup) => {
+    const groupId = getGroupId(group);
+
+    if (selectedGroup === groupId) {
+      onSelectGroup(null, null);
+    } else {
+      onSelectGroup(groupId, group);
+    }
+  };
 
   const renderTreeItem = (group: AccountsGroup, level: number = 0) => {
     const groupId = getGroupId(group);

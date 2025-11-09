@@ -45,11 +45,10 @@ export default function SubAccounts({
     initialSubAccountState
   );
 
-  // Load sub accounts when controller account changes
   useEffect(() => {
     if (controllerAccount) {
       loadSubAccounts();
-      // Update the form with controller account code
+
       setNewSubAccount((prev) => ({ ...prev, xacc: controllerAccount.xacc }));
     }
   }, [controllerAccount]);
@@ -102,7 +101,6 @@ export default function SubAccounts({
     }
 
     try {
-      // Create with all three fields in body
       const createData = {
         xacc: newSubAccount.xacc,
         xsub: newSubAccount.xsub,
@@ -133,7 +131,6 @@ export default function SubAccounts({
       return;
     }
     try {
-      // For update, only send xdesc (description) since xacc and xsub cannot be changed
       const updateData = {
         xacc: editSubAccount.xacc,
         xsub: editSubAccount.xsub,
@@ -170,7 +167,6 @@ export default function SubAccounts({
 
     if (result.isConfirmed) {
       try {
-        // Use composite key for deletion
         await deleteData(`/accounts/subaccounts/${xacc}/${xsub}/`);
         Swal.fire("Deleted!", "Sub Account has been deleted.", "success");
         await loadSubAccounts();
@@ -212,7 +208,6 @@ export default function SubAccounts({
 
   return (
     <div>
-      {/* Header - Removed Back to Controller button */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h4 className="font-semibold text-gray-800 dark:text-white/90">
@@ -244,7 +239,6 @@ export default function SubAccounts({
         </div>
       </div>
 
-      {/* Sub Accounts Table */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         {isLoading ? (
           <Spinner />
@@ -324,7 +318,6 @@ export default function SubAccounts({
         )}
       </div>
 
-      {/* Create Sub Account Modal */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -390,7 +383,6 @@ export default function SubAccounts({
         </div>
       </Modal>
 
-      {/* Edit Sub Account Modal - Only allows editing description */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -406,7 +398,6 @@ export default function SubAccounts({
 
           <form onSubmit={handleUpdateSubAccount} className="px-6 py-4">
             <div className="space-y-4">
-              {/* Display-only fields for Controller Account and Sub Account Number */}
               <div>
                 <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Controller Account
@@ -428,7 +419,6 @@ export default function SubAccounts({
                 </p>
               </div>
 
-              {/* Editable field for Description */}
               <div>
                 <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Description <span className="text-red-500">*</span>

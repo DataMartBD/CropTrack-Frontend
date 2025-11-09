@@ -25,7 +25,6 @@ import { Modal } from "../../../components/ui/modal";
 import Label from "../../../components/form/Label";
 import Swal from "sweetalert2";
 
-// Import types for hierarchical levels
 import type {
   Level1Model,
   Level2Model,
@@ -47,7 +46,6 @@ export default function ControllerAccounts({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Hierarchical level states - for create modal
   const [l1Groups, setL1Groups] = useState<Level1Model[]>([]);
   const [l2Groups, setL2Groups] = useState<Level2Model[]>([]);
   const [l3Groups, setL3Groups] = useState<Level3Model[]>([]);
@@ -61,7 +59,6 @@ export default function ControllerAccounts({
   const [isLoadingL3, setIsLoadingL3] = useState(false);
   const [isLoadingL4, setIsLoadingL4] = useState(false);
 
-  // Hierarchical level states - for edit modal
   const [editSelectedLevel1, setEditSelectedLevel1] = useState<string>("");
   const [editSelectedLevel2, setEditSelectedLevel2] = useState<string>("");
   const [editSelectedLevel3, setEditSelectedLevel3] = useState<string>("");
@@ -133,7 +130,6 @@ export default function ControllerAccounts({
     loadLevel1Data();
   }, []);
 
-  // Load L2 Groups for create modal
   useEffect(() => {
     const loadLevel2Data = async () => {
       if (!selectedLevel1) {
@@ -161,7 +157,6 @@ export default function ControllerAccounts({
     loadLevel2Data();
   }, [selectedLevel1]);
 
-  // Load L3 Groups for create modal
   useEffect(() => {
     const loadLevel3Data = async () => {
       if (!selectedLevel1 || !selectedLevel2) {
@@ -189,7 +184,6 @@ export default function ControllerAccounts({
     loadLevel3Data();
   }, [selectedLevel1, selectedLevel2]);
 
-  // Load L4 Groups for create modal
   useEffect(() => {
     const loadLevel4Data = async () => {
       if (!selectedLevel1 || !selectedLevel2 || !selectedLevel3) {
@@ -217,7 +211,6 @@ export default function ControllerAccounts({
     loadLevel4Data();
   }, [selectedLevel1, selectedLevel2, selectedLevel3]);
 
-  // Load L2 Groups for edit modal
   useEffect(() => {
     const loadEditLevel2Data = async () => {
       if (!editSelectedLevel1) {
@@ -244,7 +237,6 @@ export default function ControllerAccounts({
     }
   }, [editSelectedLevel1, isEditModalOpen]);
 
-  // Load L3 Groups for edit modal
   useEffect(() => {
     const loadEditLevel3Data = async () => {
       if (!editSelectedLevel1 || !editSelectedLevel2) {
@@ -271,7 +263,6 @@ export default function ControllerAccounts({
     }
   }, [editSelectedLevel1, editSelectedLevel2, isEditModalOpen]);
 
-  // Load L4 Groups for edit modal
   useEffect(() => {
     const loadEditLevel4Data = async () => {
       if (!editSelectedLevel1 || !editSelectedLevel2 || !editSelectedLevel3) {
@@ -303,7 +294,6 @@ export default function ControllerAccounts({
     isEditModalOpen,
   ]);
 
-  // Reset form when create modal opens
   useEffect(() => {
     if (isCreateModalOpen) {
       resetForm();
@@ -471,7 +461,6 @@ export default function ControllerAccounts({
       zactive: account.zactive || true,
     });
 
-    // Set the hierarchical levels for edit modal
     setEditSelectedLevel1(account.xhrc1 || "");
     setEditSelectedLevel2(account.xhrc2 || "");
     setEditSelectedLevel3(account.xhrc3 || "");
@@ -492,7 +481,6 @@ export default function ControllerAccounts({
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
     if (
       !newControllerAccount.xacc ||
       !newControllerAccount.xdesc ||
@@ -504,7 +492,6 @@ export default function ControllerAccounts({
       return;
     }
 
-    // Validate that at least one level is selected
     if (
       !selectedLevel1 &&
       !selectedLevel2 &&
@@ -612,8 +599,6 @@ export default function ControllerAccounts({
       const queryString = params.toString() ? `?${params.toString()}` : "";
       const url = `/accounts/chartofaccounts/${queryString}`;
 
-      // console.log("Loading controller accounts with URL:", url);
-
       const controllerAccs: ControllerAccountModel[] = await getData(url);
       setControllerAccounts(controllerAccs);
     } catch (err) {
@@ -624,7 +609,6 @@ export default function ControllerAccounts({
     }
   };
 
-  // Load controller accounts when selectedGroup changes
   useEffect(() => {
     loadControllerAccounts();
   }, [selectedGroup]);
@@ -1007,9 +991,7 @@ export default function ControllerAccounts({
 
           <form onSubmit={handleCreateAccount} className="px-6 py-4">
             <div className="space-y-4">
-              {/* Main Account Details - 3 Columns */}
               <div className="grid grid-cols-3 gap-4">
-                {/* Column 1: Account Code */}
                 <div className="space-y-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1027,7 +1009,6 @@ export default function ControllerAccounts({
                   </div>
                 </div>
 
-                {/* Columns 2-3: Description spanning 2 columns */}
                 <div className="col-span-2 space-y-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1046,7 +1027,6 @@ export default function ControllerAccounts({
                 </div>
               </div>
 
-              {/* Account Type, Usage & Source - 3 Columns */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1103,7 +1083,6 @@ export default function ControllerAccounts({
                 </div>
               </div>
 
-              {/* Account Group Assignment - ALWAYS show all 4 levels */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Account Group Assignment{" "}
@@ -1114,7 +1093,6 @@ export default function ControllerAccounts({
                 </Label>
 
                 <div className="grid grid-cols-4 gap-3">
-                  {/* Level 1 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 1
@@ -1141,7 +1119,6 @@ export default function ControllerAccounts({
                     </div>
                   </div>
 
-                  {/* Level 2 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 2
@@ -1168,7 +1145,6 @@ export default function ControllerAccounts({
                     </div>
                   </div>
 
-                  {/* Level 3 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 3
@@ -1195,7 +1171,6 @@ export default function ControllerAccounts({
                     </div>
                   </div>
 
-                  {/* Level 4 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 4
@@ -1285,9 +1260,7 @@ export default function ControllerAccounts({
 
           <form onSubmit={handleUpdateAccount} className="px-6 py-4">
             <div className="space-y-4">
-              {/* Main Account Details - 3 Columns */}
               <div className="grid grid-cols-3 gap-4">
-                {/* Column 1: Account Code (Read-only) */}
                 <div className="space-y-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1302,7 +1275,6 @@ export default function ControllerAccounts({
                   </div>
                 </div>
 
-                {/* Columns 2-3: Description spanning 2 columns */}
                 <div className="col-span-2 space-y-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1321,7 +1293,6 @@ export default function ControllerAccounts({
                 </div>
               </div>
 
-              {/* Account Type, Usage & Source - 3 Columns */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1378,7 +1349,6 @@ export default function ControllerAccounts({
                 </div>
               </div>
 
-              {/* Account Group Assignment for Edit - ALWAYS show all 4 levels */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Account Group Assignment{" "}
@@ -1389,7 +1359,6 @@ export default function ControllerAccounts({
                 </Label>
 
                 <div className="grid grid-cols-4 gap-3">
-                  {/* Level 1 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 1
@@ -1416,7 +1385,6 @@ export default function ControllerAccounts({
                     </div>
                   </div>
 
-                  {/* Level 2 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 2
@@ -1443,7 +1411,6 @@ export default function ControllerAccounts({
                     </div>
                   </div>
 
-                  {/* Level 3 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 3
@@ -1470,7 +1437,6 @@ export default function ControllerAccounts({
                     </div>
                   </div>
 
-                  {/* Level 4 */}
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Level 4
@@ -1499,7 +1465,6 @@ export default function ControllerAccounts({
                 </div>
               </div>
 
-              {/* Status Checkbox */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Account Status
