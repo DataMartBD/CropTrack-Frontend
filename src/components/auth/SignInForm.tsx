@@ -5,7 +5,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { useUserContext } from "../../context/UserContext";
 import { useAuth } from "../../context/AuthContext";
 import { EyeIcon, EyeCloseIcon } from "../../icons";
-import Potato from '../../../public/potato.png'
+import Potato from "/potato.png";
 
 export default function SignInForm() {
   const { setToken } = useAuth();
@@ -50,11 +50,7 @@ export default function SignInForm() {
       <Toaster position="top-right" />
       <div className="w-full max-w-xs m-auto bg-indigo-100 rounded p-5 shadow-lg">
         <header className="mb-5">
-          <img
-            className="w-20 mx-auto mb-3"
-            src={Potato}
-            alt="Logo"
-          />
+          <img className="w-20 mx-auto mb-3" src={Potato} alt="Logo" />
           <svg
             className="mx-auto dark:hidden"
             width="240"
@@ -75,7 +71,6 @@ export default function SignInForm() {
             </text>
           </svg>
         </header>
-
 
         <form onSubmit={handleSubmit}>
           <div>
@@ -147,7 +142,6 @@ export default function SignInForm() {
       <footer className="absolute bottom-4 w-full text-center text-sm text-white/60">
         © 2025 DataMart BD Limited
       </footer>
-
     </div>
   );
 }

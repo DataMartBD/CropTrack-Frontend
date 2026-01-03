@@ -1,15 +1,15 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { useEffect, useState, useMemo } from "react";
-// import { Modal } from "../../components/ui/modal";
-// import Input from "../../components/form/input/InputField";
-// import Label from "../../components/form/Label";
+import { Modal } from "../../components/ui/modal";
+import CertificateTemplate from "../../components/Certificate/CertificateTemplate";
 import axios from "axios";
 // import toast, { Toaster } from "react-hot-toast";
 // import DatePicker from "react-datepicker";
 // import Swal from "sweetalert2";
 import "react-datepicker/dist/react-datepicker.css";
 import { useTranslation } from "react-i18next";
+import { createRoot } from "react-dom/client";
 
 import { useNavigate } from "react-router";
 
@@ -67,11 +67,11 @@ export default function CertificateList() {
   const [isLoading, setIsLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  //   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  //   const [editData, setEditData] = useState({
-  //     token_no: "",
-  //     sack_no: 0,
-  //   });
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] =
+    useState<CertificateModel | null>(null);
+
   const handlePagination = (action: () => void) => {
     action();
     window.scrollTo({
@@ -93,60 +93,82 @@ export default function CertificateList() {
     });
   }, [certificatesData, searchQuery]);
 
-  //   const handleEditInputChange = (
-  //     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  //   ) => {
-  //     const { name, value } = e.target;
-  //     setEditData((prev) => ({
-  //       ...prev,
-  //       [name]: value,
-  //     }));
-  //   };
+  const handleView = (certificate: CertificateModel) => {
+    setSelectedCertificate(certificate);
+    setIsViewModalOpen(true);
+  };
 
-  //   const handleUpdate = async (e: React.FormEvent) => {
-  //     e.preventDefault();
-  //     const token = window.localStorage.getItem("jwtToken");
+  const handlePrint = () => {
+    if (!selectedCertificate) return;
 
-  //     // const bodyData = {
-  //     //   xsack: editData.sack_no,
-  //     // };
-  //     // console.log(bodyData);
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
 
-  //     try {
-  //       await axios.put(
-  //         `${api.base}/ops/token/sack_input/${editData.token_no}/`,
-  //         {
-  //           xsack: editData.sack_no,
-  //         },
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-  //       setIsEditModalOpen(false);
-  //       // Refresh the students list
-  //       const response = await axios.get(`${api.base}/ops/token/pending/`, {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       });
-  //       setTokensData(response.data.data);
-  //       Swal.fire({
-  //         title: "Updated!",
-  //         text: "Token has been updated successfully.",
-  //         icon: "success",
-  //       });
-  //     } catch (error: any) {
-  //       Swal.fire({
-  //         title: "Error!",
-  //         text: error.response?.data?.message || "Failed to update token",
-  //         icon: "error",
-  //       });
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    // Get all style sheets from the main document to ensure Tailwind styles are applied
+    const styles = Array.from(document.styleSheets)
+      .map((styleSheet) => {
+        try {
+          return Array.from(styleSheet.cssRules)
+            .map((rule) => rule.cssText)
+            .join("");
+        } catch (e) {
+          console.log("Access to stylesheet denied", e);
+          return "";
+        }
+      })
+      .join("\n");
+
+    // Create a container for the React component
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+
+    // Inject styles
+    const styleElement = doc.createElement("style");
+    styleElement.textContent = styles;
+    doc.head.appendChild(styleElement);
+
+    // Inject Google Fonts for Bengali
+    const fontLink = doc.createElement("link");
+    fontLink.href =
+      "https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&display=swap";
+    fontLink.rel = "stylesheet";
+    doc.head.appendChild(fontLink);
+
+    // Add specific print styles
+    const printStyle = doc.createElement("style");
+    printStyle.textContent = `
+      @page { size: auto;  margin: 0mm; }
+      @media print {
+        body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      }
+      body {
+        font-family: 'Noto Serif Bengali', serif;
+      }
+    `;
+    doc.head.appendChild(printStyle);
+
+    // Render the CertificateTemplate into the iframe
+    const root = createRoot(container);
+    root.render(<CertificateTemplate data={selectedCertificate} />);
+
+    // Wait for content to render then print
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+
+      // Cleanup after printing
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
+  };
 
   const columnHelper = createColumnHelper<CertificateModel>();
 
@@ -171,14 +193,6 @@ export default function CertificateList() {
         header: "📞 Mobile",
         cell: (info) => info.getValue(),
       }),
-      //   columnHelper.accessor(
-      //     (row) => `${row.district_name || ""}, ${row.upazila_name || ""}`,
-      //     {
-      //       id: "location",
-      //       header: "📍 Address",
-      //       cell: (info) => info.getValue(),
-      //     }
-      //   ),
       columnHelper.accessor("xstatus", {
         header: "⭕ Status",
         cell: (info) => info.getValue(),
@@ -187,10 +201,6 @@ export default function CertificateList() {
         header: "💰 Sacks",
         cell: (info) => info.getValue(),
       }),
-      //   columnHelper.accessor("given_loan", {
-      //     header: "💴 Loan",
-      //     cell: (info) => Number(info.getValue()).toFixed(2),
-      //   }),
       columnHelper.accessor("total_amount_taka", {
         header: "💵 Total",
         cell: (info) => Number(info.getValue()).toFixed(2),
@@ -201,13 +211,7 @@ export default function CertificateList() {
         cell: (info) => (
           <div className="flex items-center gap-3">
             <button
-              //   onClick={() => {
-              //     setEditData({
-              //       token_no: info.row.original.token_no,
-              //       sack_no: info.row.original.xsack,
-              //     });
-              //     setIsEditModalOpen(true);
-              //   }}
+              onClick={() => handleView(info.row.original)}
               className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-[#13725A]"
             >
               <FcFinePrint size={20} /> View
@@ -530,93 +534,68 @@ export default function CertificateList() {
           </div>
         )}
 
-        {/* Edit Modal */}
-        {/* <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          className="max-w-[700px] m-4"
+        {/* View Modal */}
+        <Modal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          className="max-w-[900px] m-4"
         >
-          <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-            <div className="px-2 pr-14">
-              <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-                Sack Number Entry
-              </h4>
-              <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-                Update the number of sacks for the token.
-              </p>
+          <div className="relative w-full overflow-y-auto rounded-3xl bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="sticky top-0 right-0 z-50 flex justify-end p-4 bg-white/80 backdrop-blur-sm dark:bg-gray-900/80">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-            <form onSubmit={handleUpdate} className="flex flex-col">
-              <div className="custom-scrollbar overflow-y-auto px-2 pb-3">
-                <div className="mt-7">
-                  <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
-                    <div>
-                      <Label>Token No.</Label>
-                      <Input
-                        type="text"
-                        name="token_no"
-                        value={editData.token_no}
-                        onChange={handleEditInputChange}
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <Label>No. of Sacks</Label>
-                      <Input
-                        type="text"
-                        name="sack_no"
-                        value={editData.sack_no}
-                        onChange={handleEditInputChange}
-                        placeholder="Enter Number of Sacks"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+            <div className="p-6 pt-0 max-h-[80vh] overflow-y-auto custom-scrollbar">
+              {selectedCertificate && (
+                <CertificateTemplate data={selectedCertificate} />
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+              >
+                Close
+              </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#13725A] rounded-lg hover:bg-[#13503E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-[#13503E]dark:hover:bg-[#13725A]"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <svg
-                        className="w-4 h-4 mr-2 animate-spin"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Updating...
-                    </span>
-                  ) : (
-                    "Submit"
-                  )}
-                </button>
-              </div>
-            </form>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                  />
+                </svg>
+                Print / Download PDF
+              </button>
+            </div>
           </div>
-        </Modal> */}
-        {/* Add Modal */}
+        </Modal>
       </div>
     </div>
   );

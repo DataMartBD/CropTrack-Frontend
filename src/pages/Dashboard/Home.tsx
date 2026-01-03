@@ -1,6 +1,6 @@
 import PageMeta from "../../components/common/PageMeta";
 // import { useEffect, useState } from "react";
-import Farm from "../../../public/images/cold-storage/farm.svg";
+import Farm from "/images/cold-storage/farm.svg";
 import {
   FcContacts,
   FcFrame,
