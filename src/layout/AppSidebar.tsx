@@ -15,6 +15,7 @@ import {
   FcCalculator,
   FcParallelTasks,
   FcBullish,
+  FcDataSheet,
 } from "react-icons/fc";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -154,6 +155,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         name: "Accounts Group",
         icon: <FcParallelTasks />,
         path: "/accounts/group",
+      },
+      {
+        name: "Journal Voucher",
+        icon: <FcDataSheet  />,
+        path: "/accounts/journal-voucher",
       },
     ],
   },

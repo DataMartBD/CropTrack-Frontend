@@ -27,6 +27,10 @@ import RateSetup from "./pages/MasterData/RateSetup";
 import LoanManagement from "./pages/Accounts/Loan/LoanManagement";
 import AccountsGroupBase from "./pages/Accounts/AccountsGroup/AccountsGroupBase";
 import ChartOfAccountsBase from "./pages/Accounts/COA/ChartOfAccountsBase";
+import JournalVoucherList from "./pages/Accounts/JournalVoucher/JournalVoucherList";
+import JournalVoucherEntry from "./pages/Accounts/JournalVoucher/JournalVoucherEntry";
+import JournalVoucherUpdate from "./pages/Accounts/JournalVoucher/JournalVoucherUpdate";
+import JournalVoucherView from "./pages/Accounts/JournalVoucher/JournalVoucherView";
 
 export default function App() {
   return (
@@ -63,6 +67,22 @@ export default function App() {
               <Route
                 path="/accounts/chart-of-accounts"
                 element={<ChartOfAccountsBase />}
+              />
+              <Route
+                path="/accounts/journal-voucher"
+                element={<JournalVoucherList />}
+              />
+              <Route
+                path="/accounts/journal-voucher/new"
+                element={<JournalVoucherEntry />}
+              />
+              <Route
+                path="/accounts/journal-voucher/update/:xvoucher"
+                element={<JournalVoucherUpdate />}
+              />
+              <Route
+                path="/accounts/journal-voucher/view/:xvoucher"
+                element={<JournalVoucherView />}
               />
               <Route path="/accounts/loanm" element={<LoanManagement />} />
             </Route>
