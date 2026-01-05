@@ -5,7 +5,18 @@ import PageMeta from "../../../components/common/PageMeta";
 import { getData } from "../../../services/apiClient";
 import Badge from "../../../components/ui/badge/Badge";
 import { Spinner } from "../../../components/ui/ut/Spinner";
-import { FiPlusCircle, FiSearch, FiList, FiEdit } from "react-icons/fi";
+import {
+  FiPlusCircle,
+  FiSearch,
+  FiEdit,
+  FiCheck,
+  FiX,
+  FiLoader,
+  FiPrinter,
+  FiCheckCircle,
+} from "react-icons/fi";
+import { postData } from "../../../services/apiClient";
+import toast, { Toaster } from "react-hot-toast";
 import {
   useReactTable,
   getCoreRowModel,
@@ -34,9 +45,86 @@ interface JournalVoucher {
   xyear: number;
   xper: number;
   xstatusjv: string;
+  xpostflag: string;
   created_by_name?: string;
   gldetails_header?: GLDetailHeader[];
 }
+
+const PostButton = ({
+  xvoucher,
+  onSuccess,
+}: {
+  xvoucher: string;
+  onSuccess: () => void;
+}) => {
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+
+  const handlePost = async () => {
+    setIsPosting(true);
+    try {
+      const response: any = await postData(
+        `/accounts/journal-vouchers/post/${xvoucher}/`,
+        {}
+      );
+      if (response.success) {
+        toast.success(
+          response.message || "Journal voucher posted successfully"
+        );
+        onSuccess();
+      } else {
+        toast.error("Failed to post journal voucher");
+      }
+    } catch (error) {
+      console.error("Post error:", error);
+      toast.error("An error occurred while posting");
+    } finally {
+      setIsPosting(false);
+      setIsConfirming(false);
+    }
+  };
+
+  if (isConfirming) {
+    return (
+      <div className="flex items-center gap-1">
+        <button
+          onClick={handlePost}
+          disabled={isPosting}
+          className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors"
+          title="Confirm Post"
+        >
+          {/* Fixed brace */}
+          {isPosting ? (
+            <FiLoader className="animate-spin" size={14} />
+          ) : (
+            <FiCheck size={14} />
+          )}
+          Confirm
+        </button>
+        <button
+          onClick={() => setIsConfirming(false)}
+          disabled={isPosting}
+          className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded transition-colors"
+          title="Cancel"
+        >
+          <FiX size={14} />
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setIsConfirming(true)}
+      className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-600 transition-colors"
+      title="Post Voucher"
+    >
+      <FiCheckCircle size={16} />
+      <span>Post</span>
+    </button>
+  );
+};
 
 export default function JournalVoucherList() {
   const navigate = useNavigate();
@@ -63,6 +151,20 @@ export default function JournalVoucherList() {
 
     loadData();
   }, []);
+
+  const refreshData = async () => {
+    setIsLoading(true);
+    try {
+      const data: JournalVoucher[] = await getData(
+        "/accounts/Journal-voucher/"
+      );
+      setJournalVouchers(data || []);
+    } catch (err) {
+      console.error("Failed to load journal vouchers:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return journalVouchers;
@@ -93,14 +195,14 @@ export default function JournalVoucherList() {
         header: "Period",
         cell: (info) => info.getValue(),
       }),
-      columnHelper.accessor("xstatusjv", {
+      columnHelper.accessor("xpostflag", {
         header: "Status",
         cell: (info) => {
           const status = info.getValue() as string;
           return (
             <Badge
               color={
-                status === "Balanced" || status === "Posted"
+                status === "Posted"
                   ? "success"
                   : status === "Open"
                   ? "warning"
@@ -117,18 +219,26 @@ export default function JournalVoucherList() {
         header: () => <div className="text-right">Actions</div>,
         cell: (info) => (
           <div className="flex gap-2 justify-end">
-            <button
-              onClick={() =>
-                navigate(
-                  `/accounts/journal-voucher/update/${info.row.original.xvoucher}`
-                )
-              }
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-amber-600 transition-colors"
-              title="Edit"
-            >
-              <FiEdit size={16} />
-              <span>Edit</span>
-            </button>
+            {info.row.original.xpostflag !== "Posted" && (
+              <PostButton
+                xvoucher={info.row.original.xvoucher}
+                onSuccess={refreshData}
+              />
+            )}
+            {info.row.original.xpostflag !== "Posted" && (
+              <button
+                onClick={() =>
+                  navigate(
+                    `/accounts/journal-voucher/update/${info.row.original.xvoucher}`
+                  )
+                }
+                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-amber-600 transition-colors"
+                title="Edit"
+              >
+                <FiEdit size={16} />
+                <span>Edit</span>
+              </button>
+            )}
             <button
               onClick={() =>
                 navigate(
@@ -138,7 +248,7 @@ export default function JournalVoucherList() {
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
               title="View"
             >
-              <FiList size={16} />
+              <FiPrinter size={16} />
               <span>View</span>
             </button>
           </div>
@@ -165,6 +275,7 @@ export default function JournalVoucherList() {
 
   return (
     <div>
+      <Toaster position="top-right" />
       <PageMeta
         title="Crop Track - Journal Voucher List"
         description="Journal Voucher List"

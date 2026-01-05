@@ -75,7 +75,7 @@ export default function JournalVoucherEntry() {
 
   const [details, setDetails] = useState<JournalDetail[]>([
     {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substring(2, 9),
       xrow: 1,
       xacc: "",
       xsub: "",
@@ -124,7 +124,7 @@ export default function JournalVoucherEntry() {
     setDetails((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: Math.random().toString(36).substring(2, 9),
         xrow: prev.length + 1,
         xacc: "",
         xsub: "",

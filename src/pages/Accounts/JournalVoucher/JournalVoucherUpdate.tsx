@@ -105,7 +105,7 @@ export default function JournalVoucherUpdate() {
                 const prime = parseFloat(d.xprime) || 0;
 
                 const detailRow: JournalDetail = {
-                  id: crypto.randomUUID(),
+                  id: Math.random().toString(36).substring(2, 9),
                   xrow: d.xrow,
                   xacc: d.xacc,
                   xsub: d.xsub || "",
@@ -163,7 +163,7 @@ export default function JournalVoucherUpdate() {
     setDetails((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: Math.random().toString(36).substring(2, 9),
         xrow: prev.length + 1,
         xacc: "",
         xsub: "",
