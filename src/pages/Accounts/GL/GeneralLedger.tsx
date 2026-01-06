@@ -153,10 +153,10 @@ const GeneralLedgerTemplate = ({
       {/* Title Bar like Voucher */}
       <div className="flex items-center justify-between bg-green-50 border-y border-green-800 py-1 px-3 mb-4">
         <div className="font-semibold text-sm bg-green-800 text-white px-3 py-0.5 rounded-full">
-          DAILY GENERAL LEDGER
+          GENERAL LEDGER
         </div>
         <div className="text-sm font-medium text-gray-700">
-          Print Code: <span className="font-mono">{chitNo}</span>
+          চিট নং: <span className="font-mono">{chitNo}</span>
         </div>
       </div>
 
@@ -166,8 +166,8 @@ const GeneralLedgerTemplate = ({
         <div className="border-r border-black">
           {/* Column Header */}
           <div className="flex justify-between items-center border-b border-black px-2 py-1 font-bold bg-gray-100 print:bg-transparent">
-            <span>Deposit</span>
-            <span>Amount</span>
+            <span>Deposit/জমা</span>
+            <span>Amount/টাকা</span>
           </div>
 
           {/* Groups */}
@@ -235,8 +235,8 @@ const GeneralLedgerTemplate = ({
         <div>
           {/* Column Header */}
           <div className="flex justify-between items-center border-b border-black px-2 py-1 font-bold bg-gray-100 print:bg-transparent">
-            <span>Expense</span>
-            <span>Amount</span>
+            <span>Expense/খরচ</span>
+            <span>Amount/টাকা</span>
           </div>
 
           {/* Groups */}
@@ -302,11 +302,11 @@ const GeneralLedgerTemplate = ({
       {/* Grand Total Row */}
       <div className="grid grid-cols-2 border border-t-0 border-black font-bold text-sm bg-gray-100 print:bg-transparent">
         <div className="border-r border-black p-2 flex justify-between">
-          <span>Total Deposit</span>
+          <span>Total Deposit/মোট জমা</span>
           <span>{ledgerData.summary.total_deposit.toLocaleString()}</span>
         </div>
         <div className="p-2 flex justify-between">
-          <span>Total Expense</span>
+          <span>Total Expense/মোট খরচ</span>
           <span>{ledgerData.summary.total_expense.toLocaleString()}</span>
         </div>
       </div>
@@ -329,7 +329,7 @@ const GeneralLedgerTemplate = ({
           </div>
           <div className="flex justify-between text-base mt-2">
             <span className="font-bold">Balance:</span>
-            <span className="font-bold text-[#13725A] border-b-2 border-double border-[#13725A]">
+            <span className="font-bold  border-b-2 border-double border-[#121312]">
               {ledgerData.summary.balance.toLocaleString()}
             </span>
           </div>
