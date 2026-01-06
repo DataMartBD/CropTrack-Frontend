@@ -6,7 +6,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 // import { getData } from "../../../services/apiClient";
 import { Spinner } from "../../../components/ui/ut/Spinner";
-import { FiPrinter } from "react-icons/fi"; 
+import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
 
 interface LedgerItem {
@@ -206,7 +206,7 @@ const GeneralLedgerTemplate = ({
                       </div>
 
                       <div className="font-medium text-gray-800">
-                        {item.xlong || item.xnote}
+                        {item.xnote}
                       </div>
                       {item.subaccname && (
                         <div className="text-[10px] text-gray-600">
@@ -273,7 +273,7 @@ const GeneralLedgerTemplate = ({
                       </div>
 
                       <div className="font-medium text-gray-800">
-                        {item.xlong || item.xnote}
+                        {item.xnote}
                       </div>
                       {item.subaccname && (
                         <div className="text-[10px] text-gray-600">
@@ -365,10 +365,10 @@ const GeneralLedgerTemplate = ({
       <div className="mt-12 print:mt-16 pt-4 break-inside-avoid">
         <div className="grid grid-cols-2 gap-12 text-center text-xs">
           <div className="mt-8 pt-1 border-t border-black w-2/3 mx-auto">
-            <p className="font-bold text-gray-800">Prepared By</p>
+            {/* <p className="font-bold text-gray-800">Prepared By</p> */}
           </div>
           <div className="mt-8 pt-1 border-t border-black w-2/3 mx-auto">
-            <p className="font-bold text-gray-800">Approved By</p>
+            {/* <p className="font-bold text-gray-800">Approved By</p> */}
           </div>
         </div>
       </div>
@@ -533,7 +533,7 @@ export default function GeneralLedger() {
   return (
     <div>
       <PageMeta
-        title="Crop Track - General Ledger"
+        title="General Ledger - Crop Track"
         description="General Ledger"
       />
       <PageBreadcrumb pageTitle="General Ledger" />
@@ -579,7 +579,7 @@ export default function GeneralLedger() {
             className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] ml-auto flex items-center justify-center gap-2"
           >
             <FiPrinter />
-            Print / PDF
+            Print Report
           </button>
         </div>
 

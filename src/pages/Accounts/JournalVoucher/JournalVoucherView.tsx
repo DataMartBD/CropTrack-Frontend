@@ -517,7 +517,7 @@ export default function JournalVoucherView() {
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg transition-colors shadow-sm"
           >
             <FiPrinter size={16} />
-            <span>Print / PDF</span>
+            <span>Print</span>
           </button>
         </div>
       </div>
