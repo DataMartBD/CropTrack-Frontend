@@ -8,6 +8,7 @@ import { FiArrowLeft, FiPrinter, FiEdit } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
 import { createRoot } from "react-dom/client";
 import { toWords } from "number-to-words";
+import { ReportHeader } from "../../../components/reports/ReportHeader";
 
 interface JournalVoucherData {
   xvoucher: string;
@@ -44,9 +45,6 @@ interface SubAccount {
   xdesc: string;
 }
 
-// ----------------------------------------------------------------------
-// Template Component (Used for both Screen View and Print)
-// ----------------------------------------------------------------------
 const JournalVoucherTemplate = ({
   voucher,
   accountsMap,
@@ -60,62 +58,14 @@ const JournalVoucherTemplate = ({
 }) => {
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-0 max-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      {/* Header Section */}
-      <div className="relative overflow-hidden text-center mb-4 py-4 px-4 bg-gradient-to-b from-green-50 to-white border-b-2 border-double border-green-800 rounded-t-lg">
-        {/* Background Graphic Elements */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern
-                id="grid"
-                width="40"
-                height="40"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M 40 0 L 0 0 0 40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10">
-          <h6 className="text-[10px] mb-1 text-zinc-600">
-            বিসমিল্লাহির রাহমানির রাহিম
-          </h6>
-
-          <div className="inline-block px-2 py-0.5 mb-1 bg-green-800 text-white text-[9px] rounded-sm uppercase">
-            রাহবার এগ্রো কমপ্লেক্স (প্রাঃ) লিমিটেড এর অঙ্গ প্রতিষ্ঠান
-          </div>
-
-          <div className="flex justify-center items-center gap-2 mb-1">
-            <div className="hidden md:block h-px w-8 bg-green-800/30"></div>
-            <h1 className="text-xl font-bold text-green-900">
-              রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪
-            </h1>
-            <div className="hidden md:block h-px w-8 bg-green-800/30"></div>
-          </div>
-
-          <div className="flex flex-col items-center justify-center">
-            <p className="text-xs text-zinc-700">বটতলী, বীরগঞ্জ, দিনাজপুর।</p>
-            <div className="flex gap-4 mt-0.5">
-              <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
-                <span className="text-green-800 font-medium">মোবাইল:</span>{" "}
-                ০১৭০১৮৮৯০৪, ০১৭৪০১৩৩১৪৪
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ReportHeader title="রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪">
+        <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
+          <span className="text-green-800 font-medium">মোবাইল:</span>{" "}
+          ০১৭০১৮৮৯০৪, ০১৭৪০১৩৩১৪৪
+        </p>
+      </ReportHeader>
 
       <div className="px-4 pb-4">
-        {/* Title Bar */}
         <div className="flex items-center justify-between bg-green-50 border-y border-green-800 py-1 px-3 mb-4">
           <div className="font-semibold text-sm bg-green-800 text-white px-3 py-0.5 rounded-full">
             JOURNAL VOUCHER
@@ -168,7 +118,6 @@ const JournalVoucherTemplate = ({
           </div>
         </div>
 
-        {/* Details Table */}
         <div className="mb-6">
           <table className="w-full text-sm text-left border-collapse">
             <thead>
@@ -255,7 +204,6 @@ const JournalVoucherTemplate = ({
           </table>
         </div>
 
-        {/* Signature Section */}
         <div className="mt-12 print:mt-auto pt-4">
           <div className="grid grid-cols-2 gap-12 text-center text-xs">
             <div className="mt-8 pt-1 border-t border-gray-300">
@@ -277,9 +225,7 @@ const JournalVoucherTemplate = ({
   );
 };
 
-// ----------------------------------------------------------------------
-// Main View Page Component
-// ----------------------------------------------------------------------
+
 export default function JournalVoucherView() {
   const { xvoucher } = useParams();
   const navigate = useNavigate();
@@ -415,14 +361,14 @@ export default function JournalVoucherView() {
     styleElement.textContent = styles;
     doc.head.appendChild(styleElement);
 
-    // Google Fonts
+
     const fontLink = doc.createElement("link");
     fontLink.href =
       "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     fontLink.rel = "stylesheet";
     doc.head.appendChild(fontLink);
 
-    // Print Specific CSS
+
     const printStyle = doc.createElement("style");
     printStyle.textContent = `
       @page { size: auto; margin: 0mm; }
@@ -433,7 +379,7 @@ export default function JournalVoucherView() {
     `;
     doc.head.appendChild(printStyle);
 
-    // Render Template
+
     const root = createRoot(container);
     root.render(
       <JournalVoucherTemplate
@@ -444,7 +390,7 @@ export default function JournalVoucherView() {
       />
     );
 
-    // Execute Print
+
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -487,7 +433,7 @@ export default function JournalVoucherView() {
       />
       <PageBreadcrumb pageTitle={`View Voucher`} />
 
-      {/* Header / Action Bar matching CertificateList style (sort of) */}
+
       <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <button
@@ -522,7 +468,7 @@ export default function JournalVoucherView() {
         </div>
       </div>
 
-      {/* Display View - Renders the exact same template but in the page flow */}
+
       <div className="flex justify-center bg-gray-50/50 dark:bg-[#020d1a] py-8 rounded-2xl border border-gray-100 dark:border-gray-800">
         <div className="w-full max-w-[210mm] transform scale-[0.9] sm:scale-100 origin-top">
           <JournalVoucherTemplate

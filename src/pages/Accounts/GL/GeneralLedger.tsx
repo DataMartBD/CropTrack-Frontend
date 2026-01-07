@@ -8,6 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
+import { ReportHeader } from "../../../components/reports/ReportHeader";
 
 interface LedgerItem {
   xvoucher: string;
@@ -39,7 +40,7 @@ interface LedgerResponse {
   message: string;
 }
 
-// Helper to group data by Account Description (xdesc)
+
 const groupData = (items: LedgerItem[]) => {
   const groups: Record<string, LedgerItem[]> = {};
   items.forEach((item) => {
@@ -52,7 +53,7 @@ const groupData = (items: LedgerItem[]) => {
   return groups;
 };
 
-// Helper to sum up a group
+
 const getGroupTotal = (items: LedgerItem[], type: "deposit" | "expense") => {
   return items.reduce((sum, item) => {
     const val =
@@ -61,9 +62,7 @@ const getGroupTotal = (items: LedgerItem[], type: "deposit" | "expense") => {
   }, 0);
 };
 
-// ----------------------------------------------------------------------
-// Template Component (Used for both Screen View and Print)
-// ----------------------------------------------------------------------
+
 const GeneralLedgerTemplate = ({
   ledgerData,
   groupedDeposits,
@@ -81,76 +80,24 @@ const GeneralLedgerTemplate = ({
 
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      {/* Styled Header Section */}
-      <div className="relative overflow-hidden text-center mb-4 py-4 px-4 bg-gradient-to-b from-green-50 to-white border-b-2 border-double border-green-800 rounded-t-lg">
-        {/* Background Graphic Elements */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern
-                id="grid"
-                width="40"
-                height="40"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M 40 0 L 0 0 0 40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
 
-        {/* Content */}
-        <div className="relative z-10">
-          <h6 className="text-[10px] mb-1 text-zinc-600">
-            বিসমিল্লাহির রাহমানির রাহিম
-          </h6>
+      <ReportHeader
+        title={
+          ledgerData.deposits[0]?.business_name ||
+          "রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪"
+        }
+      >
+        <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
+          <span className="text-green-800 font-medium">Report Date:</span>{" "}
+          {formattedDateRange}
+        </p>
+        <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
+          <span className="text-green-800 font-medium">Print Date:</span>{" "}
+          {todayStr}
+        </p>
+      </ReportHeader>
 
-          <div className="inline-block px-2 py-0.5 mb-1 bg-green-800 text-white text-[9px] rounded-sm uppercase">
-            রাহবার এগ্রো কমপ্লেক্স (প্রাঃ) লিমিটেড এর অঙ্গ প্রতিষ্ঠান
-          </div>
 
-          <div className="flex justify-center items-center gap-2 mb-1">
-            <div className="hidden md:block h-px w-8 bg-green-800/30"></div>
-            <h1 className="text-xl font-bold text-green-900">
-              {ledgerData.deposits[0]?.business_name ||
-                "রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪"}
-            </h1>
-            <div className="hidden md:block h-px w-8 bg-green-800/30"></div>
-          </div>
-
-          <div className="flex flex-col items-center justify-center">
-            <p className="text-xs text-zinc-700">বটতলী, বীরগঞ্জ, দিনাজপুর।</p>
-            <div className="flex gap-4 mt-0.5">
-              <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
-                <span className="text-green-800 font-medium">Report Date:</span>{" "}
-                {formattedDateRange}
-              </p>
-              <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
-                <span className="text-green-800 font-medium">Print Date:</span>{" "}
-                {todayStr}
-              </p>
-            </div>
-          </div>
-
-          {/*  Absolute */}
-          {/* <div className="absolute top-4 left-4 text-xs font-bold border border-green-800 px-2 py-0.5 rounded shadow-sm bg-white hidden sm:block print:block">
-            No: {chitNo}
-          </div> */}
-
-          {/* Total Balance Absolute */}
-          {/* <div className="absolute top-4 right-4 text-xs font-bold border border-green-800 px-2 py-0.5 rounded shadow-sm bg-white hidden sm:block print:block">
-            Balance: {ledgerData.summary.balance.toLocaleString()}/=
-          </div> */}
-        </div>
-      </div>
-
-      {/* Title Bar like Voucher */}
       <div className="flex items-center justify-between bg-green-50 border-y border-green-800 py-1 px-3 mb-4">
         <div className="font-semibold text-sm bg-green-800 text-white px-3 py-0.5 rounded-full">
           GENERAL LEDGER
@@ -160,17 +107,17 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      {/* Main Two-Column Table Layout */}
+  
       <div className="grid grid-cols-2 gap-0 border border-black text-xs sm:text-sm">
-        {/* LEFT COLUMN: DEPOSITS */}
+      
         <div className="border-r border-black">
-          {/* Column Header */}
+         
           <div className="flex justify-between items-center border-b border-black px-2 py-1 font-bold bg-gray-100 print:bg-transparent">
             <span>Deposit/জমা</span>
             <span>Amount/টাকা</span>
           </div>
 
-          {/* Groups */}
+      
           {Object.keys(groupedDeposits).map((groupName) => {
             const items = groupedDeposits[groupName];
             const groupTotal = getGroupTotal(items, "deposit");
@@ -180,24 +127,24 @@ const GeneralLedgerTemplate = ({
                 key={groupName}
                 className="border-b border-black last:border-b-0 break-inside-avoid"
               >
-                {/* Group Header Row */}
+       
                 <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
                     {groupName}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300">
-                    {/* Placeholder */}
+                 
                   </div>
                 </div>
 
-                {/* Items */}
+               
                 {items.map((item, idx) => (
                   <div
                     key={item.xvoucher + idx}
                     className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
                   >
                     <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      {/* Date & Account Code on top */}
+                      
                       <div className="flex justify-between items-center text-[10px] text-gray-500 mb-0.5">
                         <span>{item.xdate}</span>
                         <span className="font-mono bg-gray-100 px-1 rounded">
@@ -220,7 +167,6 @@ const GeneralLedgerTemplate = ({
                   </div>
                 ))}
 
-                {/* Group Total Footer */}
                 <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
                   <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
                     {groupTotal.toLocaleString()}
@@ -231,15 +177,15 @@ const GeneralLedgerTemplate = ({
           })}
         </div>
 
-        {/* RIGHT COLUMN: EXPENSES */}
+   
         <div>
-          {/* Column Header */}
+        
           <div className="flex justify-between items-center border-b border-black px-2 py-1 font-bold bg-gray-100 print:bg-transparent">
             <span>Expense/খরচ</span>
             <span>Amount/টাকা</span>
           </div>
 
-          {/* Groups */}
+        
           {Object.keys(groupedExpenses).map((groupName) => {
             const items = groupedExpenses[groupName];
             const groupTotal = getGroupTotal(items, "expense");
@@ -249,7 +195,7 @@ const GeneralLedgerTemplate = ({
                 key={groupName}
                 className="border-b border-black last:border-b-0 break-inside-avoid"
               >
-                {/* Group Header Row */}
+              
                 <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
                     {groupName}
@@ -257,14 +203,14 @@ const GeneralLedgerTemplate = ({
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300"></div>
                 </div>
 
-                {/* Items */}
+             
                 {items.map((item, idx) => (
                   <div
                     key={item.xvoucher + idx}
                     className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
                   >
                     <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      {/* Date & Account Code on top */}
+                     
                       <div className="flex justify-between items-center text-[10px] text-gray-500 mb-0.5">
                         <span>{item.xdate}</span>
                         <span className="font-mono bg-gray-100 px-1 rounded">
@@ -287,7 +233,7 @@ const GeneralLedgerTemplate = ({
                   </div>
                 ))}
 
-                {/* Group Total Footer */}
+                
                 <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
                   <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
                     {groupTotal.toLocaleString()}
@@ -299,7 +245,7 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      {/* Grand Total Row */}
+      
       <div className="grid grid-cols-2 border border-t-0 border-black font-bold text-sm bg-gray-100 print:bg-transparent">
         <div className="border-r border-black p-2 flex justify-between">
           <span>Total Deposit/মোট জমা</span>
@@ -311,9 +257,9 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      {/* Footer Summary Blocks */}
+      
       <div className="mt-6 grid grid-cols-2 gap-8 break-inside-avoid">
-        {/* Left Block: Summary */}
+        
         <div className="border border-black p-4 text-sm shadow-sm print:shadow-none">
           <div className="flex justify-between mb-2">
             <span>Total Deposit:</span>
@@ -335,7 +281,7 @@ const GeneralLedgerTemplate = ({
           </div>
         </div>
 
-        {/* Right Block: Denomination */}
+        
         <div className="border border-black text-xs shadow-sm print:shadow-none">
           <div className="grid grid-cols-3 border-b border-black font-bold text-center bg-gray-50 print:bg-transparent">
             <div className="p-1 border-r border-black">Note</div>
@@ -361,7 +307,7 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      {/* Signature Section */}
+      
       <div className="mt-12 print:mt-16 pt-4 break-inside-avoid">
         <div className="grid grid-cols-2 gap-12 text-center text-xs">
           <div className="mt-8 pt-1 border-t border-black w-2/3 mx-auto">
@@ -376,9 +322,7 @@ const GeneralLedgerTemplate = ({
   );
 };
 
-// ----------------------------------------------------------------------
-// Main Component
-// ----------------------------------------------------------------------
+
 
 export default function GeneralLedger() {
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
@@ -490,14 +434,14 @@ export default function GeneralLedger() {
     styleElement.textContent = styles;
     doc.head.appendChild(styleElement);
 
-    // Google Fonts
+
     const fontLink = doc.createElement("link");
     fontLink.href =
       "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     fontLink.rel = "stylesheet";
     doc.head.appendChild(fontLink);
 
-    // Print Specific CSS
+
     const printStyle = doc.createElement("style");
     printStyle.textContent = `
       @page { size: auto; margin: 0mm; }
@@ -508,7 +452,7 @@ export default function GeneralLedger() {
     `;
     doc.head.appendChild(printStyle);
 
-    // Render Template
+ 
     const root = createRoot(container);
     root.render(
       <GeneralLedgerTemplate
@@ -520,7 +464,7 @@ export default function GeneralLedger() {
       />
     );
 
-    // Execute Print
+
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -539,7 +483,7 @@ export default function GeneralLedger() {
       <PageBreadcrumb pageTitle="General Ledger" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        {/* Controls */}
+
         <div className="flex flex-col sm:flex-row items-end gap-4 mb-8 print:hidden">
           <div className="w-full sm:w-auto">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">

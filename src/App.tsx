@@ -32,6 +32,7 @@ import JournalVoucherEntry from "./pages/Accounts/JournalVoucher/JournalVoucherE
 import JournalVoucherUpdate from "./pages/Accounts/JournalVoucher/JournalVoucherUpdate";
 import JournalVoucherView from "./pages/Accounts/JournalVoucher/JournalVoucherView";
 import GeneralLedger from "./pages/Accounts/GL/GeneralLedger";
+import BankCashBalanceSheet from "./pages/Accounts/Reports/BankCashBalanceSheet";
 
 export default function App() {
   return (
@@ -89,6 +90,10 @@ export default function App() {
               <Route
                 path="/accounts/general-ledger"
                 element={<GeneralLedger />}
+              />
+              <Route
+                path="/accounts/bank-cash-balance"
+                element={<BankCashBalanceSheet />}
               />
             </Route>
           </Route>

@@ -24,7 +24,7 @@ interface SubAccountsProps {
 
 export default function SubAccounts({
   controllerAccount,
-  onBackToController,
+  // onBackToController,
 }: SubAccountsProps) {
   const [subAccounts, setSubAccounts] = useState<SubAccountModel[]>([]);
   const [isLoading, setIsLoading] = useState(false);

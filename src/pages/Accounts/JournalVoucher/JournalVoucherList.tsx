@@ -93,7 +93,7 @@ const PostButton = ({
           className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors"
           title="Confirm Post"
         >
-          {/* Fixed brace */}
+       
           {isPosting ? (
             <FiLoader className="animate-spin" size={14} />
           ) : (
@@ -137,7 +137,7 @@ export default function JournalVoucherList() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // apiClient.getData returns response.data.data, which is the array
+       
         const data: JournalVoucher[] = await getData(
           "/accounts/Journal-voucher/"
         );
@@ -283,14 +283,14 @@ export default function JournalVoucherList() {
       <PageBreadcrumb pageTitle="Journal Voucher List" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        {/* Header Actions */}
+       
         <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
             Journal Vouchers
           </h2>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Search Input */}
+           
             <div className="relative w-full sm:w-64">
               <input
                 type="search"
@@ -302,7 +302,7 @@ export default function JournalVoucherList() {
               <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
 
-            {/* Create Button */}
+            
             <button
               onClick={() => navigate("/accounts/journal-voucher/new")}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:ring-offset-2 transition-colors whitespace-nowrap"
@@ -313,7 +313,7 @@ export default function JournalVoucherList() {
           </div>
         </div>
 
-        {/* Table */}
+       
         <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
           {isLoading ? (
             <div className="py-20 flex justify-center">
@@ -391,7 +391,7 @@ export default function JournalVoucherList() {
           )}
         </div>
 
-        {/* Pagination Controls */}
+        
         {!isLoading && (
           <div className="mt-6 flex items-center justify-between">
             <div className="flex items-center gap-2">

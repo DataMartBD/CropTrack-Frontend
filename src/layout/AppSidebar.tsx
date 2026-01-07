@@ -17,6 +17,7 @@ import {
   FcBullish,
   FcDataSheet,
   FcDocument,
+  FcNeutralTrading,
 } from "react-icons/fc";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -167,6 +168,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcDocument />,
         path: "/accounts/general-ledger",
       },
+      {
+        name: "Bank/Cash Balance",
+        icon: <FcNeutralTrading  />,
+        path: "/accounts/bank-cash-balance",
+      },
     ],
   },
 ];
@@ -178,7 +184,7 @@ const AppSidebar: React.FC = () => {
   const [filteredNavItems, setFilteredNavItems] = useState<NavItem[]>([]);
   // const [logoImg, setLogoImg] = useState<string | null>(null);
 
-  useEffect(() => {
+  useEffect(() => { 
     const navItems = getTranslatedNavItems(t);
     setFilteredNavItems(navItems);
   }, [i18n.language, t]); // watch for language change
