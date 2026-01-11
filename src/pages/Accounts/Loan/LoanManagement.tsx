@@ -249,6 +249,48 @@ export default function LoanManagement() {
     }
   };
 
+  const handlePost = async (loan: LoanModel) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `You want to post loan ${loan.xtrnnum}? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#13725A",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, post it!",
+    });
+
+    if (result.isConfirmed) {
+      setIsLoading(true);
+      try {
+        const response: any = await postData(
+          `/accounts/loan/post/${loan.xtrnnum}/`,
+          {}
+        );
+        if (response.success) {
+          Swal.fire("Success", response.message, "success");
+          // Refetch data
+          const loanData: LoanModel[] = await getData("/accounts/loan/list/");
+          setLoanListData(loanData);
+        } else {
+          Swal.fire(
+            "Error",
+            response.message || "Failed to post loan.",
+            "error"
+          );
+        }
+      } catch (err: any) {
+        Swal.fire(
+          "Error",
+          err.response?.data?.message || "An error occurred while posting.",
+          "error"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   const filteredLoanListData = useMemo(() => {
     if (!searchQuery.trim()) return loanListData;
 
@@ -306,14 +348,14 @@ export default function LoanManagement() {
         cell: (info) => {
           const status = info.getValue();
           const getStatusStyle = (status: string) => {
-            switch (status) {
+            switch (status?.toUpperCase()) {
               case "PENDING":
                 return "bg-yellow-100 text-yellow-800 border border-yellow-300";
               case "POSTED":
                 return "bg-green-100 text-green-800 border border-green-300";
               case "REJECTED":
                 return "bg-red-100 text-red-800 border border-red-300";
-              case "In Progress":
+              case "IN PROGRESS":
                 return "bg-blue-100 text-blue-800 border border-blue-300";
               default:
                 return "bg-gray-100 text-gray-800 border border-gray-300";
@@ -333,23 +375,36 @@ export default function LoanManagement() {
       columnHelper.display({
         id: "actions",
         header: "Actions",
-        cell: (info) => (
-          <div className="flex gap-2">
-            {info.row.original.xstatus !== "POSTED" && (
-              <>
-                <button
-                  onClick={() => handleOpenEditModal(info.row.original)}
-                  className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
-                >
-                  <FcEditImage size={20} /> Edit
-                </button>
-                <button className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]">
-                  <FcOk size={20} /> Post
-                </button>
-              </>
-            )}
-          </div>
-        ),
+        cell: (info) => {
+          const isPosted =
+            info.row.original.xstatus?.toUpperCase() === "POSTED";
+          return (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleOpenEditModal(info.row.original)}
+                disabled={isPosted}
+                className={`flex gap-1 px-2 py-1 text-sm rounded-sm transition-colors ${
+                  isPosted
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                    : "bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+                }`}
+              >
+                <FcEditImage size={20} /> Edit
+              </button>
+              <button
+                onClick={() => handlePost(info.row.original)}
+                disabled={isPosted}
+                className={`flex gap-1 px-2 py-1 text-sm rounded-sm transition-colors ${
+                  isPosted
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                    : "bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-[#13725A]"
+                }`}
+              >
+                <FcOk size={20} /> Post
+              </button>
+            </div>
+          );
+        },
       }),
     ],
     []
