@@ -21,6 +21,7 @@ import CertificateList from "./pages/Certificate/CertificateList";
 import LoadPage from "./pages/Certificate/Load/Load";
 import ExchangePage from "./pages/Certificate/Exchange/Exchange";
 import DeliveryPage from "./pages/Certificate/Delivery/Delivery";
+import DeliveryList from "./pages/Certificate/Delivery/DeliveryList";
 import CustomerDatabase from "./pages/MasterData/CustomerDatabase";
 import AgentDatabase from "./pages/MasterData/AgentDatabase";
 import RateSetup from "./pages/MasterData/RateSetup";
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/token/generate" element={<GenerateToken />} />
               <Route path="/token/pendings" element={<PendingTokens />} />
               <Route path="/token/counted" element={<CountedTokens />} />
+              <Route path="/ops/delivery-list" element={<DeliveryList />} />
               <Route
                 path="/masterdata/customer"
                 element={<CustomerDatabase />}

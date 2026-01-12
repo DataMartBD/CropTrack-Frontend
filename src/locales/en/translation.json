@@ -83,5 +83,6 @@
   "journal_voucher": "Journal Voucher",
   "general_ledger": "Deposit and Expense",
   "ledger_report": "Ledger Report",
-  "rate_setup": "Rate Setup"
+  "rate_setup": "Rate Setup",
+  "delivery_list": "Delivery List"
 }

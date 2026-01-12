@@ -107,6 +107,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcPackage />,
         path: "/certificate/delivery",
       },
+      {
+        name: t("delivery_list"),
+        icon: <FcPackage />,
+        path: "/ops/delivery-list",
+      },
     ],
   },
   // {
