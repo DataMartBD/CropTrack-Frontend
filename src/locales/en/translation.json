@@ -75,5 +75,13 @@
   "certificate_list": "Certificate List",
   "inventory_flow": "Inventory Flow",
   "master_data": "Master Data",
-  "agent_database": "Agent Database"
+  "agent_database": "Agent Database",
+  "accounts": "Accounts",
+  "loan_management": "Loan Management",
+  "chart_of_accounts": "Chart of Accounts",
+  "accounts_group": "Accounts Group",
+  "journal_voucher": "Journal Voucher",
+  "general_ledger": "Deposit and Expense",
+  "ledger_report": "Ledger Report",
+  "rate_setup": "Rate Setup"
 }

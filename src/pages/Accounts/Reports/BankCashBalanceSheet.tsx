@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -8,6 +8,8 @@ import { Spinner } from "../../../components/ui/ut/Spinner";
 import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
 import { ReportHeader } from "../../../components/reports/ReportHeader";
+import { getData } from "../../../services/apiClient";
+import { Toaster } from "react-hot-toast";
 
 interface BalanceSheetItem {
   business_id: number;
@@ -16,7 +18,22 @@ interface BalanceSheetItem {
   xdesc: string;
   xsub: string;
   subaccname: string | null;
-  total_amount: string;
+  opening_balance: string;
+  debit_amount: string;
+  credit_amount: string;
+  closing_balance: string;
+}
+
+interface Account {
+  xacc: string;
+  xdesc: string;
+  xaccsource: string;
+}
+
+interface SubAccount {
+  xacc: string;
+  xsub: string;
+  xdesc: string;
 }
 
 const BankCashTemplate = ({
@@ -29,8 +46,8 @@ const BankCashTemplate = ({
   todayStr: string;
 }) => {
   const businessName = data[0]?.business_name || "Business Name";
-  const totalAmount = data.reduce(
-    (sum, item) => sum + (parseFloat(item.total_amount) || 0),
+  const totalClosingBalance = data.reduce(
+    (sum, item) => sum + (parseFloat(item.closing_balance) || 0),
     0
   );
 
@@ -49,52 +66,97 @@ const BankCashTemplate = ({
 
       <div className="flex items-center justify-center bg-green-50 border-y border-green-800 py-1 px-3 mb-4">
         <div className="font-semibold text-sm bg-green-800 text-white px-3 py-0.5 rounded-full">
-          BANK/CASH BALANCE SHEET
+          Ledger Report
         </div>
       </div>
 
-      <div className="border border-black text-xs sm:text-sm">
-        <div className="grid grid-cols-12 gap-0 border-b border-black font-bold bg-gray-100 print:bg-transparent">
-          <div className="col-span-2 p-2 border-r border-black">Account</div>
-          <div className="col-span-3 p-2 border-r border-black">Name</div>
-          <div className="col-span-2 p-2 border-r border-black">Sub Acc</div>
-          <div className="col-span-3 p-2 border-r border-black">
-            Sub Acc Name
-          </div>
-          <div className="col-span-2 p-2 text-right">Amount</div>
-        </div>
-
-        {data.map((item, idx) => (
-          <div
-            key={idx}
-            className="grid grid-cols-12 gap-0 border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
-          >
-            <div className="col-span-2 p-2 border-r border-gray-200 font-mono">
-              {item.xacc}
-            </div>
-            <div className="col-span-3 p-2 border-r border-gray-200">
-              {item.xdesc}
-            </div>
-            <div className="col-span-2 p-2 border-r border-gray-200 font-mono">
-              {item.xsub}
-            </div>
-            <div className="col-span-3 p-2 border-r border-gray-200">
-              {item.subaccname || "-"}
-            </div>
-            <div className="col-span-2 p-2 text-right font-mono">
-              {parseFloat(item.total_amount).toLocaleString()}
-            </div>
-          </div>
-        ))}
-
-        <div className="grid grid-cols-12 gap-0 border-t border-black font-bold bg-gray-100 print:bg-transparent">
-          <div className="col-span-10 p-2 text-right border-r border-black">
-            Total Balance:
-          </div>
-          <div className="col-span-2 p-2 text-right">
-            {totalAmount.toLocaleString()}
-          </div>
-        </div>
+      <div className="w-full overflow-x-auto">
+        <table className="w-full border-collapse border border-black text-[10px]">
+          <thead>
+            <tr className="bg-gray-100 font-bold border-b border-black print:bg-transparent">
+              <th className="border-r border-black p-2 text-left whitespace-nowrap w-[8%]">
+                Account
+              </th>
+              <th className="border-r border-black p-2 text-left w-[20%]">
+                Name
+              </th>
+              <th className="border-r border-black p-2 text-left whitespace-nowrap w-[8%]">
+                Sub Acc
+              </th>
+              <th className="border-r border-black p-2 text-left w-[20%]">
+                Sub Acc Name
+              </th>
+              <th className="border-r border-black p-2 text-right whitespace-nowrap w-[11%]">
+                Opening
+              </th>
+              <th className="border-r border-black p-2 text-right whitespace-nowrap w-[11%]">
+                Debit
+              </th>
+              <th className="border-r border-black p-2 text-right whitespace-nowrap w-[11%]">
+                Credit
+              </th>
+              <th className="p-2 text-right whitespace-nowrap w-[11%]">
+                Closing
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item, idx) => (
+              <tr
+                key={idx}
+                className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 print:hover:bg-transparent"
+              >
+                <td className="border-r border-gray-200 p-2 font-mono">
+                  {item.xacc}
+                </td>
+                <td className="border-r border-gray-200 p-2 leading-tight">
+                  {item.xdesc}
+                </td>
+                <td className="border-r border-gray-200 p-2 font-mono">
+                  {item.xsub}
+                </td>
+                <td className="border-r border-gray-200 p-2 leading-tight">
+                  {item.subaccname || "-"}
+                </td>
+                <td className="border-r border-gray-200 p-2 text-right font-mono">
+                  {parseFloat(item.opening_balance).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
+                <td className="border-r border-gray-200 p-2 text-right font-mono">
+                  {parseFloat(item.debit_amount).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
+                <td className="border-r border-gray-200 p-2 text-right font-mono">
+                  {parseFloat(item.credit_amount).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
+                <td className="p-2 text-right font-mono">
+                  {parseFloat(item.closing_balance).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-gray-100 font-bold border-t border-black print:bg-transparent">
+              <td colSpan={7} className="border-r border-black p-2 text-right">
+                Total Closing Balance:
+              </td>
+              <td className="p-2 text-right font-mono">
+                {totalClosingBalance.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* Signature Section */}
@@ -112,13 +174,73 @@ const BankCashTemplate = ({
   );
 };
 
-
-
 export default function BankCashBalanceSheet() {
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
   const [toDate, setToDate] = useState<Date | null>(new Date());
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<BalanceSheetItem[] | null>(null);
+
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAcc, setSelectedAcc] = useState("");
+  const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
+  const [selectedSub, setSelectedSub] = useState("");
+  const [accSource, setAccSource] = useState("");
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const data = await getData<Account[]>("/accounts/chartofaccounts/");
+        setAccounts(data || []);
+      } catch (err) {
+        console.error("Failed to load accounts", err);
+      }
+    };
+    fetchAccounts();
+  }, []);
+
+  const handleAccountChange = async (xacc: string) => {
+    setSelectedAcc(xacc);
+    setSelectedSub("");
+    setSubAccounts([]);
+
+    const account = accounts.find((a) => a.xacc === xacc);
+    if (!account) {
+      setAccSource("");
+      return;
+    }
+
+    setAccSource(account.xaccsource);
+
+    if (
+      account.xaccsource === "Subaccount" ||
+      account.xaccsource === "Customer"
+    ) {
+      try {
+        let endpoint = "";
+        if (account.xaccsource === "Subaccount") {
+          endpoint = `/accounts/subaccounts/${xacc}/`;
+        } else if (account.xaccsource === "Customer") {
+          endpoint = `/masterdata/customers/list/`;
+        }
+
+        const response: any = await getData(endpoint);
+        let normalizedData: SubAccount[] = [];
+
+        if (account.xaccsource === "Subaccount") {
+          normalizedData = response;
+        } else if (account.xaccsource === "Customer") {
+          normalizedData = (response as any[]).map((c) => ({
+            xacc: xacc,
+            xsub: c.customer_code,
+            xdesc: c.customer_name,
+          }));
+        }
+        setSubAccounts(normalizedData);
+      } catch (err) {
+        console.error(`Failed to load sub-accounts`, err);
+      }
+    }
+  };
 
   const handleGetReport = async () => {
     if (!fromDate || !toDate) return;
@@ -137,14 +259,15 @@ export default function BankCashBalanceSheet() {
       const apiBase = import.meta.env.VITE_API_BASE_URL;
       const token = window.localStorage.getItem("jwtToken");
 
-      const response = await axios.get(
-        `${apiBase}/accounts/report/bank-cash/?from_date=${from}&to_date=${to}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      let url = `${apiBase}/accounts/report/bank-cash/?from_date=${from}&to_date=${to}`;
+      if (selectedAcc) url += `&xacc=${selectedAcc}`;
+      if (selectedSub) url += `&xsub=${selectedSub}`;
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.data && response.data.data) {
         setReportData(response.data.data);
@@ -242,55 +365,97 @@ export default function BankCashBalanceSheet() {
 
   return (
     <div>
+      <Toaster position="top-right" />
       <PageMeta
-        title="Bank/Cash Balance Sheet - Crop Track"
-        description="Bank/Cash Balance Sheet"
+        title="Ledger Report - Crop Track"
+        description="Ledger Report"
       />
-      <PageBreadcrumb pageTitle="Bank/Cash Balance Sheet" />
+      <PageBreadcrumb pageTitle="Ledger Report" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-
-        <div className="flex flex-col sm:flex-row items-end gap-4 mb-8 print:hidden">
-          <div className="w-full sm:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 items-end gap-4 mb-8 print:hidden">
+          <div className="w-full">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               From Date
             </label>
             <DatePicker
               selected={fromDate}
               onChange={(date) => setFromDate(date)}
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
               dateFormat="yyyy-MM-dd"
             />
           </div>
 
-          <div className="w-full sm:w-auto">
+          <div className="w-full">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               To Date
             </label>
             <DatePicker
               selected={toDate}
               onChange={(date) => setToDate(date)}
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
               dateFormat="yyyy-MM-dd"
             />
           </div>
 
-          <button
-            onClick={handleGetReport}
-            disabled={!fromDate || !toDate || loading}
-            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
-          >
-            {loading ? "Loading..." : "Get Sheet"}
-          </button>
+          <div className="w-full">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Account
+            </label>
+            <select
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
+              value={selectedAcc}
+              onChange={(e) => handleAccountChange(e.target.value)}
+            >
+              <option value="">All Accounts</option>
+              {accounts.map((acc) => (
+                <option key={acc.xacc} value={acc.xacc}>
+                  {acc.xacc} - {acc.xdesc}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <button
-            onClick={handlePrint}
-            disabled={!reportData || reportData.length === 0}
-            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] ml-auto flex items-center justify-center gap-2"
-          >
-            <FiPrinter />
-            Print Report
-          </button>
+          <div className="w-full">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Sub Account
+            </label>
+            <select
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+              value={selectedSub}
+              onChange={(e) => setSelectedSub(e.target.value)}
+              disabled={
+                !accSource ||
+                (accSource !== "Subaccount" && accSource !== "Customer")
+              }
+            >
+              <option value="">All {accSource || "Sub-accounts"}</option>
+              {subAccounts.map((sub, idx) => (
+                <option key={idx} value={sub.xsub}>
+                  {sub.xdesc}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-2 lg:col-span-1 xl:col-span-2">
+            <button
+              onClick={handleGetReport}
+              disabled={!fromDate || !toDate || loading}
+              className="flex-1 px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
+            >
+              {loading ? "Loading..." : "Get Report"}
+            </button>
+
+            <button
+              onClick={handlePrint}
+              disabled={!reportData || reportData.length === 0}
+              className="flex-1 px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] flex items-center justify-center gap-2"
+            >
+              <FiPrinter />
+              Print
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -309,7 +474,7 @@ export default function BankCashBalanceSheet() {
           </div>
         ) : (
           <div className="text-center py-20 text-gray-500 dark:text-gray-400">
-            Please select a date range and click "Get Sheet" to view results.
+            Please select a date range and click "Get Report" to view results.
           </div>
         )}
       </div>

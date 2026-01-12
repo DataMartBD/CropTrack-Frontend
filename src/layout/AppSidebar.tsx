@@ -133,44 +133,44 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         path: "/masterdata/agent",
       },
       {
-        name: "Rate Setup",
+        name: t("rate_setup"),
         icon: <FcPackage />,
         path: "/masterdata/rate-setup",
       },
     ],
   },
   {
-    name: "Accounts",
+    name: t("accounts"),
     icon: <FcCalculator />,
     subItems: [
       {
-        name: "Loan Management",
+        name: t("loan_management"),
         icon: <FcOvertime />,
         path: "/accounts/loanm",
       },
       {
-        name: "Chart of Accounts",
+        name: t("chart_of_accounts"),
         icon: <FcBullish />,
         path: "/accounts/chart-of-accounts",
       },
       {
-        name: "Accounts Group",
+        name: t("accounts_group"),
         icon: <FcParallelTasks />,
         path: "/accounts/group",
       },
       {
-        name: "Journal Voucher",
+        name: t("journal_voucher"),
         icon: <FcDataSheet />,
         path: "/accounts/journal-voucher",
       },
       {
-        name: "General Ledger",
+        name: t("general_ledger"),
         icon: <FcDocument />,
         path: "/accounts/general-ledger",
       },
       {
-        name: "Bank/Cash Balance",
-        icon: <FcNeutralTrading  />,
+        name: t("ledger_report"),
+        icon: <FcNeutralTrading />,
         path: "/accounts/bank-cash-balance",
       },
     ],
@@ -184,7 +184,7 @@ const AppSidebar: React.FC = () => {
   const [filteredNavItems, setFilteredNavItems] = useState<NavItem[]>([]);
   // const [logoImg, setLogoImg] = useState<string | null>(null);
 
-  useEffect(() => { 
+  useEffect(() => {
     const navItems = getTranslatedNavItems(t);
     setFilteredNavItems(navItems);
   }, [i18n.language, t]); // watch for language change
