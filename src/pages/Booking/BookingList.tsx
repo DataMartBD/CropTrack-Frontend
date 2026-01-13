@@ -1,7 +1,7 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { useEffect, useState, useMemo } from "react";
-// import { Modal } from "../../components/ui/modal";
+import { Modal } from "../../components/ui/modal";
 // import Input from "../../components/form/input/InputField";
 // import Label from "../../components/form/Label";
 import axios from "axios";
@@ -20,30 +20,18 @@ import {
   getSortedRowModel,
   SortingState,
 } from "@tanstack/react-table";
-import { FcPrint } from "react-icons/fc";
+import { FcPrint, FcFinePrint } from "react-icons/fc";
+import { createRoot } from "react-dom/client";
+import BookingTemplate, {
+  BookingModel,
+} from "../../components/Booking/BookingTemplate";
 
 const api = {
   base: import.meta.env.VITE_API_BASE_URL,
 };
 
-interface BookingModel {
-  create_date: string;
-  created_at: string;
-  updated_at: string;
-  booking_no: string;
-  customer_code: string;
-  xmobile: string;
-  xname: string;
-  district_name: string;
-  upazila_name: string;
-  union_name: string;
-  xadvance: string;
-  xsack: number;
-  xstatus: string;
-  created_by: string;
-  updated_by: string;
-  business_id: string;
-}
+// Redefine BookingModel locally or import from Template
+// Using the imported BookingModel
 
 export default function BookingList() {
   const { t } = useTranslation();
@@ -51,11 +39,11 @@ export default function BookingList() {
   const [isLoading, setIsLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  //   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  //   const [editData, setEditData] = useState({
-  //     token_no: "",
-  //     sack_no: 0,
-  //   });
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<BookingModel | null>(
+    null
+  );
   const handlePagination = (action: () => void) => {
     action();
     window.scrollTo({
@@ -132,6 +120,103 @@ export default function BookingList() {
   //     }
   //   };
 
+  const handleView = (booking: BookingModel) => {
+    setSelectedBooking(booking);
+    setIsViewModalOpen(true);
+  };
+
+  const handlePrint = async (booking_no: string) => {
+    setIsLoading(true);
+    const token = window.localStorage.getItem("jwtToken");
+
+    try {
+      const response = await axios.get(`${api.base}/ops/bookings/list/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          booking_no: booking_no,
+        },
+      });
+
+      if (response.data.success && response.data.data.length > 0) {
+        const bookingData = response.data.data[0];
+
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "absolute";
+        iframe.style.width = "0px";
+        iframe.style.height = "0px";
+        iframe.style.border = "none";
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc) return;
+
+        // Get all style sheets
+        const styles = Array.from(document.styleSheets)
+          .map((styleSheet) => {
+            try {
+              return Array.from(styleSheet.cssRules)
+                .map((rule) => rule.cssText)
+                .join("");
+            } catch (e) {
+              console.log("Access to stylesheet denied", e);
+              return "";
+            }
+          })
+          .join("\n");
+
+        const container = doc.createElement("div");
+        doc.body.appendChild(container);
+
+        const styleElement = doc.createElement("style");
+        styleElement.textContent = styles;
+        doc.head.appendChild(styleElement);
+
+        const fontLink = doc.createElement("link");
+        fontLink.href =
+          "https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&display=swap";
+        fontLink.rel = "stylesheet";
+        doc.head.appendChild(fontLink);
+
+        const printStyle = doc.createElement("style");
+        printStyle.textContent = `
+          @page { size: A4; margin: 0mm; }
+          @media print {
+            html, body { 
+              margin: 0 !important; 
+              padding: 0 !important; 
+              height: 100%;
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+            }
+          }
+          body {
+            font-family: 'Noto Serif Bengali', serif;
+            margin: 0;
+            padding: 0;
+          }
+        `;
+        doc.head.appendChild(printStyle);
+
+        const root = createRoot(container);
+        root.render(<BookingTemplate data={bookingData} />);
+
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error printing booking:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const columnHelper = createColumnHelper<BookingModel>();
 
   const columns = useMemo(
@@ -175,17 +260,18 @@ export default function BookingList() {
       columnHelper.display({
         id: "actions",
         header: "Actions",
-        cell: () => (
+        cell: (info) => (
           <div className="flex items-center gap-3">
             <button
-              //   onClick={() => {
-              //     setEditData({
-              //       token_no: info.row.original.token_no,
-              //       sack_no: info.row.original.xsack,
-              //     });
-              //     setIsEditModalOpen(true);
-              //   }}
-              className="flex gap-1 px-4 py-2 text-sm font-medium rounded-lg bg-gray-200 hover:bg-[#13725A] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-[#13725A]"
+              onClick={() => handleView(info.row.original)}
+              className="flex gap-1 px-3 py-1 text-sm font-medium rounded-lg bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:hover:bg-gray-600"
+            >
+              <FcFinePrint size={20} /> View
+            </button>
+            <button
+              onClick={() => handlePrint(info.row.original.booking_no)}
+              disabled={isLoading}
+              className="flex gap-1 px-3 py-1 text-sm font-medium rounded-lg bg-gray-200 hover:bg-[#13725A] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-[#13725A]"
             >
               <FcPrint size={20} /> Print
             </button>
@@ -556,6 +642,60 @@ export default function BookingList() {
             </form>
           </div>
         </Modal> */}
+        {/* View Modal */}
+        <Modal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          className="max-w-[950px] m-4"
+        >
+          <div className="relative w-full overflow-hidden rounded-3xl bg-gray-100 dark:bg-gray-950">
+            <div className="sticky top-0 right-0 z-50 flex justify-between items-center p-4 bg-white/80 backdrop-blur-sm dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                Booking Slip Preview
+              </h3>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 pt-0 max-h-[80vh] overflow-y-auto custom-scrollbar">
+              {selectedBooking && <BookingTemplate data={selectedBooking} />}
+            </div>
+
+            <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  if (selectedBooking) handlePrint(selectedBooking.booking_no);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <FcPrint size={18} />
+                Print Now
+              </button>
+            </div>
+          </div>
+        </Modal>
         {/* Add Modal */}
       </div>
     </div>

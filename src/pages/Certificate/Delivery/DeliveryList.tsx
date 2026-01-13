@@ -13,7 +13,6 @@ import {
   getSortedRowModel,
   SortingState,
 } from "@tanstack/react-table";
-import { FiPrinter } from "react-icons/fi";
 import { FcFinePrint, FcPrint } from "react-icons/fc";
 
 const api = {
