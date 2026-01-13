@@ -14,6 +14,8 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { FcFinePrint, FcPrint } from "react-icons/fc";
+import { createRoot } from "react-dom/client";
+import DeliveryChallanTemplate from "../../../components/Delivery/DeliveryChallanTemplate";
 
 const api = {
   base: import.meta.env.VITE_API_BASE_URL,
@@ -34,6 +36,7 @@ export default function DeliveryList() {
   const navigate = useNavigate();
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -58,8 +61,107 @@ export default function DeliveryList() {
     });
   }, [deliveryData, searchQuery]);
 
-  const handlePrint = (delivery: DeliveryModel) => {
-    console.log("Printing delivery challan:", delivery.xchlnum);
+  const handlePrint = async (xchlnum: string) => {
+    setIsPrinting(true);
+    const token = window.localStorage.getItem("jwtToken");
+
+    try {
+      const response = await axios.get(
+        `${api.base}/ops/delivery-challan/${xchlnum}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data) {
+        // Handle both {parent, child} and {success, data: {parent, child}}
+        const challanData = response.data.parent
+          ? response.data
+          : response.data.data;
+
+        if (!challanData || !challanData.parent) {
+          console.error("Invalid challan data structure:", response.data);
+          return;
+        }
+
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "absolute";
+        iframe.style.width = "0px";
+        iframe.style.height = "0px";
+        iframe.style.border = "none";
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc) return;
+
+        // Get all style sheets
+        const styles = Array.from(document.styleSheets)
+          .map((styleSheet) => {
+            try {
+              return Array.from(styleSheet.cssRules)
+                .map((rule) => rule.cssText)
+                .join("");
+            } catch (e) {
+              console.log("Access to stylesheet denied", e);
+              return "";
+            }
+          })
+          .join("\n");
+
+        const container = doc.createElement("div");
+        doc.body.appendChild(container);
+
+        const styleElement = doc.createElement("style");
+        styleElement.textContent = styles;
+        doc.head.appendChild(styleElement);
+
+        const fontLink = doc.createElement("link");
+        fontLink.href =
+          "https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&display=swap";
+        fontLink.rel = "stylesheet";
+        doc.head.appendChild(fontLink);
+
+        const printStyle = doc.createElement("style");
+        printStyle.textContent = `
+          @page { size: A4; margin: 0mm; }
+          @media print {
+            html, body { 
+              margin: 0 !important; 
+              padding: 0 !important; 
+              height: 100%;
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+            }
+          }
+          body {
+            font-family: 'Noto Serif Bengali', serif;
+            margin: 0;
+            padding: 0;
+          }
+        `;
+        doc.head.appendChild(printStyle);
+
+        const root = createRoot(container);
+        root.render(<DeliveryChallanTemplate data={challanData} />);
+
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error printing delivery challan:", error);
+      alert(
+        "Failed to prepare challan for printing. Please check console for details."
+      );
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const columnHelper = createColumnHelper<DeliveryModel>();
@@ -112,6 +214,7 @@ export default function DeliveryList() {
         cell: (info) => (
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() =>
                 navigate(
                   `/certificate/delivery?token_no=${info.row.original.token_no}`
@@ -122,16 +225,19 @@ export default function DeliveryList() {
               <FcFinePrint size={20} /> View Stock
             </button>
             <button
-              onClick={() => handlePrint(info.row.original)}
+              type="button"
+              onClick={() => handlePrint(info.row.original.xchlnum)}
+              disabled={isPrinting}
               className="flex gap-1 px-2 py-1 text-sm rounded-sm bg-gray-200 hover:bg-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:hover:bg-[#13725A]"
             >
-              <FcPrint className="text-blue-500" size={20} /> Challan
+              <FcPrint className="text-blue-500" size={20} />{" "}
+              {isPrinting ? "Wait..." : "Challan"}
             </button>
           </div>
         ),
       }),
     ],
-    [columnHelper, navigate]
+    [columnHelper, navigate, handlePrint, isPrinting]
   );
 
   const table = useReactTable({
