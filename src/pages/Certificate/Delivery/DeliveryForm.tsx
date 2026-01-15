@@ -561,7 +561,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     Rent Total ({totalDeliveryQty} × {rentPerSack})
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {rentTotal}
+                    {rentTotal.toFixed(2)}
                   </span>
                 </div>
 
@@ -570,7 +570,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     Interest Amount
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {loanStatus?.interest_amount || 0}
+                    {(loanStatus?.interest_amount || 0).toFixed(2)}
                   </span>
                 </div>
 
@@ -579,8 +579,10 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     Loan Pay
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {(charges.xpayloan || 0) -
-                      (loanStatus?.interest_amount || 0)}
+                    {(
+                      (charges.xpayloan || 0) -
+                      (loanStatus?.interest_amount || 0)
+                    ).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -588,7 +590,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     Transportation Fee
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {charges.xchgtot}
+                    {charges.xchgtot.toFixed(2)}
                   </span>
                 </div>
 
@@ -597,7 +599,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     Empty Sacks ({charges.xemptysacks} × {emptySackPrice})
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {emptySacksCharge}
+                    {emptySacksCharge.toFixed(2)}
                   </span>
                 </div>
 
@@ -607,7 +609,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     {charges.xfanchgtpersack})
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {totalFanningCharge}
+                    {totalFanningCharge.toFixed(2)}
                   </span>
                 </div>
 
@@ -616,7 +618,7 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
                     Subtotal
                   </span>
                   <span className="text-lg text-gray-900 dark:text-white">
-                    {subtotal}
+                    {subtotal.toFixed(2)}
                   </span>
                 </div>
               </div>
