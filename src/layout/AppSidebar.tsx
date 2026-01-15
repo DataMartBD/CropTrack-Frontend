@@ -178,6 +178,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcNeutralTrading />,
         path: "/accounts/bank-cash-balance",
       },
+      {
+        name: t("loan_report"),
+        icon: <FcPieChart />,
+        path: "/accounts/loan-report",
+      },
     ],
   },
 ];

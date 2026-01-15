@@ -38,6 +38,15 @@ interface ChargesForm {
   xfanchgtpersack: number;
 }
 
+interface LoanStatus {
+  principal: number;
+  disbursement_date: string;
+  days_elapsed: number;
+  interest_rate: number;
+  interest_amount: number;
+  total_payable: number;
+}
+
 const api = {
   base: import.meta.env.VITE_API_BASE_URL,
 };
@@ -61,6 +70,8 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
     xchgtot: 0,
     xfanchgtpersack: 0,
   });
+
+  const [loanStatus, setLoanStatus] = useState<LoanStatus | null>(null);
 
   const [emptySackPrice, setEmptySackPrice] = useState<number>(0);
   const [rentPerSack, setRentPerSack] = useState<number>(0);
@@ -144,6 +155,36 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
       setLoading(false);
     }
   }, [tokenNo, location.key]);
+
+  useEffect(() => {
+    if (stock.length > 0) {
+      fetchLoanStatus();
+    }
+  }, [stock]);
+
+  const fetchLoanStatus = async () => {
+    const customerCode = stock[0]?.customer_code;
+    const interestRate = charges.xinterestrate;
+
+    if (!customerCode) return;
+
+    let url = `${api.base}/ops/loan-status/?customer_id=${customerCode}`;
+    if (interestRate && interestRate > 0) {
+      url += `&interest_rate=${interestRate}`;
+    }
+
+    try {
+      const token = window.localStorage.getItem("jwtToken");
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success) {
+        setLoanStatus(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch loan status", err);
+    }
+  };
 
   const handleSelectItem = (idx: number) => {
     const newSelected = new Set(selectedItems);
@@ -249,11 +290,14 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
         {
           token_no: tokenNo,
           delivery_items: deliveryItems,
-          xpayloan: Number(charges.xpayloan) || 0,
+          xpayloan:
+            (Number(charges.xpayloan) || 0) -
+            (loanStatus?.interest_amount || 0),
           xemptysack: Number(charges.xemptysacks) || 0,
           xemptsrate: Number(emptySackPrice) || 0,
           xemptysackchgtot: Number(emptySacksCharge) || 0,
           xinterest: Number(charges.xinterestrate) || 0,
+          xinterestamt: loanStatus?.interest_amount || 0,
           xchgtot: Number(charges.xchgtot) || 0,
           xfanchg: Number(charges.xfanchgtpersack) || 0,
           xdtwotax: Number(rentTotal) || 0,
@@ -523,10 +567,20 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
 
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-700 dark:text-gray-300">
+                    Interest Amount
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {loanStatus?.interest_amount || 0}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
                     Loan Pay
                   </span>
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {charges.xpayloan || 0}
+                    {(charges.xpayloan || 0) -
+                      (loanStatus?.interest_amount || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -577,86 +631,170 @@ const DeliveryForm = ({ tokenNo }: DeliveryFormProps) => {
               </h2>
             </div>
 
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div>
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-12 gap-3">
+              <div className="sm:col-span-6 lg:col-span-3">
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Loan Pay <span className="">(Taka)</span>
+                  Interest Rate
                 </label>
-                <input
-                  type="number"
-                  value={charges.xpayloan || ""}
-                  onChange={(e) =>
-                    handleChargeChange("xpayloan", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
-                  placeholder="0"
-                />
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    value={charges.xinterestrate || ""}
+                    onChange={(e) =>
+                      handleChargeChange("xinterestrate", e.target.value)
+                    }
+                    onBlur={fetchLoanStatus}
+                    className="w-full pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-100 dark:bg-gray-700 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      %
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div>
+              <div className="sm:col-span-6 lg:col-span-3">
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Empty Sacks <span className="">(Pcs)</span>
+                  Loan Pay
                 </label>
-                <input
-                  type="number"
-                  value={charges.xemptysacks || ""}
-                  onChange={(e) =>
-                    handleChargeChange("xemptysacks", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
-                  placeholder="0"
-                />
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    value={charges.xpayloan || ""}
+                    onChange={(e) =>
+                      handleChargeChange("xpayloan", e.target.value)
+                    }
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-100 dark:bg-gray-700 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      Tk.
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div>
+              <div className="sm:col-span-6 lg:col-span-3">
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Interest Rate <span className="">(%)</span>
+                  Loan Outstanding
                 </label>
-                <input
-                  type="number"
-                  value={charges.xinterestrate || ""}
-                  onChange={(e) =>
-                    handleChargeChange("xinterestrate", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
-                  placeholder="0"
-                />
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    disabled
+                    value={
+                      loanStatus
+                        ? (
+                            loanStatus.total_payable - (charges.xpayloan || 0)
+                          ).toFixed(2)
+                        : ""
+                    }
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none"
+                    placeholder="0.00"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-200 dark:bg-gray-600 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      Tk.
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div>
+              <div className="sm:col-span-6 lg:col-span-3">
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Transportation Fee <span className="">(Taka)</span>
+                  Loan Receivable
                 </label>
-                <input
-                  type="number"
-                  value={charges.xchgtot || ""}
-                  onChange={(e) =>
-                    handleChargeChange("xchgtot", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
-                  placeholder="0"
-                />
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    disabled
+                    value={
+                      loanStatus ? loanStatus.total_payable.toFixed(2) : ""
+                    }
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none "
+                    placeholder="0.00"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-200 dark:bg-gray-600 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      Tk.
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div>
+              <div className="sm:col-span-6 lg:col-span-4">
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  Fanning Charge Per Sack <span className="">(Taka)</span>
+                  Empty Sacks
                 </label>
-                <input
-                  type="number"
-                  value={charges.xfanchgtpersack || ""}
-                  onChange={(e) =>
-                    handleChargeChange("xfanchgtpersack", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
-                  placeholder="0"
-                />
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    value={charges.xemptysacks || ""}
+                    onChange={(e) =>
+                      handleChargeChange("xemptysacks", e.target.value)
+                    }
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-100 dark:bg-gray-700 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      Pcs
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sm:col-span-6 lg:col-span-4">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Transportation Fee
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    value={charges.xchgtot || ""}
+                    onChange={(e) =>
+                      handleChargeChange("xchgtot", e.target.value)
+                    }
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-100 dark:bg-gray-700 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      Tk.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sm:col-span-12 lg:col-span-4">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Fanning Charge Per Sack
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    value={charges.xfanchgtpersack || ""}
+                    onChange={(e) =>
+                      handleChargeChange("xfanchgtpersack", e.target.value)
+                    }
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center bg-gray-100 dark:bg-gray-700 px-2 rounded-r border border-gray-300 dark:border-gray-600">
+                    <span className="text-gray-500 dark:text-gray-300 sm:text-xs">
+                      Tk.
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <button
                 onClick={handleConfirmDelivery}
                 disabled={submitting || !isDeliveryValid}
-                className="col-span-1 sm:col-span-2 lg:col-span-3 bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition"
+                className="col-span-1 sm:col-span-12 lg:col-span-12 bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition"
               >
                 {submitting ? "Submitting..." : "Confirm Delivery"}
               </button>
