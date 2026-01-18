@@ -44,6 +44,7 @@ export type LoanForm = {
   payment_type: "PRINCIPAL" | "INTEREST" | "FEES" | "";
   payment_method: "CASH" | "BANK_TRANSFER" | "CHECK" | "MFS" | "";
   xnote: string;
+  interest_date: string;
 };
 
 export interface CertificateModel {

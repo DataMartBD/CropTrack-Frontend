@@ -6,6 +6,8 @@ import { Modal } from "../../../components/ui/modal";
 import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
 // import { useNavigate } from "react-router";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import Swal from "sweetalert2";
 import SearchableSelect from "../../../components/ui/ut/SearchableSelect";
 import type {
@@ -112,6 +114,7 @@ export default function LoanManagement() {
     payment_type: "",
     payment_method: "",
     xnote: "",
+    interest_date: new Date().toISOString().split("T")[0],
   };
 
   const [newLoan, setNewLoan] = useState<LoanForm>(initialLoanState);
@@ -135,7 +138,7 @@ export default function LoanManagement() {
             [name]: value,
             xref: "",
             certificate_no: "",
-          } as LoanForm)
+          }) as LoanForm
       );
       setCertificatesData([]); // Clear certificates
     } else {
@@ -168,6 +171,9 @@ export default function LoanManagement() {
       payment_type: loan.payment_type || "",
       payment_method: loan.payment_method || "",
       xnote: loan.xnote || "",
+      interest_date: loan.interest_date
+        ? new Date(loan.interest_date).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
     });
 
     console.log("Edit form data:", {
@@ -207,7 +213,7 @@ export default function LoanManagement() {
             [name]: value,
             xref: "",
             certificate_no: "",
-          } as LoanForm)
+          }) as LoanForm
       ); // assert correct type
       setCertificatesData([]);
     } else {
@@ -724,8 +730,8 @@ export default function LoanManagement() {
                       newLoan.loan_type === "CERTIFICATE"
                         ? customersData
                         : newLoan.loan_type === "ADVANCE"
-                        ? agentsData
-                        : []
+                          ? agentsData
+                          : []
                     }
                     value={newLoan.xref}
                     onChange={(val) => {
@@ -790,7 +796,6 @@ export default function LoanManagement() {
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
-
                 {/* Interest Rate */}
                 <div>
                   <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -802,10 +807,43 @@ export default function LoanManagement() {
                     value={newLoan.interest_rate}
                     onChange={handleCreateInputChange}
                     placeholder="0.00"
-                    // step="0.01"
                     min="0"
                     max="100"
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+
+                {/* Interest Date */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Interest Effective Date{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <DatePicker
+                    selected={
+                      newLoan.interest_date
+                        ? new Date(newLoan.interest_date)
+                        : null
+                    }
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(
+                          2,
+                          "0"
+                        );
+                        const day = String(date.getDate()).padStart(2, "0");
+                        const formattedDate = `${year}-${month}-${day}`;
+                        setNewLoan((prev) => ({
+                          ...prev,
+                          interest_date: formattedDate,
+                        }));
+                      } else {
+                        setNewLoan((prev) => ({ ...prev, interest_date: "" }));
+                      }
+                    }}
+                    dateFormat="yyyy-MM-dd"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
 
@@ -976,8 +1014,8 @@ export default function LoanManagement() {
                       editLoan.loan_type === "CERTIFICATE"
                         ? customersData
                         : editLoan.loan_type === "ADVANCE"
-                        ? agentsData
-                        : []
+                          ? agentsData
+                          : []
                     }
                     value={editLoan.xref}
                     onChange={(val) => {
@@ -1041,7 +1079,6 @@ export default function LoanManagement() {
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
-
                 {/* Interest Rate */}
                 <div>
                   <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1056,6 +1093,40 @@ export default function LoanManagement() {
                     min="0"
                     max="100"
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+
+                {/* Interest Date */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Interest Effective Date{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <DatePicker
+                    selected={
+                      editLoan.interest_date
+                        ? new Date(editLoan.interest_date)
+                        : null
+                    }
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(
+                          2,
+                          "0"
+                        );
+                        const day = String(date.getDate()).padStart(2, "0");
+                        const formattedDate = `${year}-${month}-${day}`;
+                        setEditLoan((prev) => ({
+                          ...prev,
+                          interest_date: formattedDate,
+                        }));
+                      } else {
+                        setEditLoan((prev) => ({ ...prev, interest_date: "" }));
+                      }
+                    }}
+                    dateFormat="yyyy-MM-dd"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
 

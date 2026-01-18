@@ -40,7 +40,6 @@ interface LedgerResponse {
   message: string;
 }
 
-
 const groupData = (items: LedgerItem[]) => {
   const groups: Record<string, LedgerItem[]> = {};
   items.forEach((item) => {
@@ -53,7 +52,6 @@ const groupData = (items: LedgerItem[]) => {
   return groups;
 };
 
-
 const getGroupTotal = (items: LedgerItem[], type: "deposit" | "expense") => {
   return items.reduce((sum, item) => {
     const val =
@@ -61,7 +59,6 @@ const getGroupTotal = (items: LedgerItem[], type: "deposit" | "expense") => {
     return sum + val;
   }, 0);
 };
-
 
 const GeneralLedgerTemplate = ({
   ledgerData,
@@ -80,7 +77,6 @@ const GeneralLedgerTemplate = ({
 
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-
       <ReportHeader
         title={
           ledgerData.deposits[0]?.business_name ||
@@ -97,7 +93,6 @@ const GeneralLedgerTemplate = ({
         </p>
       </ReportHeader>
 
-
       <div className="flex items-center justify-between bg-green-50 border-y border-green-800 py-1 px-3 mb-4">
         <div className="font-semibold text-sm bg-green-800 text-white px-3 py-0.5 rounded-full">
           GENERAL LEDGER
@@ -107,17 +102,13 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-  
       <div className="grid grid-cols-2 gap-0 border border-black text-xs sm:text-sm">
-      
         <div className="border-r border-black">
-         
           <div className="flex justify-between items-center border-b border-black px-2 py-1 font-bold bg-gray-100 print:bg-transparent">
             <span>Deposit/জমা</span>
             <span>Amount/টাকা</span>
           </div>
 
-      
           {Object.keys(groupedDeposits).map((groupName) => {
             const items = groupedDeposits[groupName];
             const groupTotal = getGroupTotal(items, "deposit");
@@ -127,39 +118,31 @@ const GeneralLedgerTemplate = ({
                 key={groupName}
                 className="border-b border-black last:border-b-0 break-inside-avoid"
               >
-       
                 <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
                     {groupName}
                   </div>
-                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300">
-                 
-                  </div>
+                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300"></div>
                 </div>
 
-               
                 {items.map((item, idx) => (
                   <div
                     key={item.xvoucher + idx}
                     className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
                   >
                     <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      
-                      <div className="flex justify-between items-center text-[10px] text-gray-500 mb-0.5">
+                      <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
                         <span>{item.xdate}</span>
-                        <span className="font-mono bg-gray-100 px-1 rounded">
-                          Acc: {item.xacc}
-                        </span>
+                        {item.subaccname && (
+                          <div className="text-[10px] text-gray-600">
+                            {item.subaccname}
+                          </div>
+                        )}
                       </div>
 
-                      <div className="font-medium text-gray-800">
+                      <div className="text-gray-800">
                         {item.xnote}
                       </div>
-                      {item.subaccname && (
-                        <div className="text-[10px] text-gray-600">
-                          {item.subaccname}
-                        </div>
-                      )}
                     </div>
                     <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
                       {parseFloat(item.deposit).toLocaleString()}
@@ -177,15 +160,12 @@ const GeneralLedgerTemplate = ({
           })}
         </div>
 
-   
         <div>
-        
           <div className="flex justify-between items-center border-b border-black px-2 py-1 font-bold bg-gray-100 print:bg-transparent">
             <span>Expense/খরচ</span>
             <span>Amount/টাকা</span>
           </div>
 
-        
           {Object.keys(groupedExpenses).map((groupName) => {
             const items = groupedExpenses[groupName];
             const groupTotal = getGroupTotal(items, "expense");
@@ -195,7 +175,6 @@ const GeneralLedgerTemplate = ({
                 key={groupName}
                 className="border-b border-black last:border-b-0 break-inside-avoid"
               >
-              
                 <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
                     {groupName}
@@ -203,29 +182,24 @@ const GeneralLedgerTemplate = ({
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300"></div>
                 </div>
 
-             
                 {items.map((item, idx) => (
                   <div
                     key={item.xvoucher + idx}
                     className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
                   >
                     <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                     
-                      <div className="flex justify-between items-center text-[10px] text-gray-500 mb-0.5">
+                      <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
                         <span>{item.xdate}</span>
-                        <span className="font-mono bg-gray-100 px-1 rounded">
-                          Acc: {item.xacc}
-                        </span>
+                        {item.subaccname && (
+                          <div className="text-[10px] text-gray-600">
+                            {item.subaccname}
+                          </div>
+                        )}
                       </div>
 
-                      <div className="font-medium text-gray-800">
+                      <div className=" text-gray-800">
                         {item.xnote}
                       </div>
-                      {item.subaccname && (
-                        <div className="text-[10px] text-gray-600">
-                          {item.subaccname}
-                        </div>
-                      )}
                     </div>
                     <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
                       {parseFloat(item.expense).toLocaleString()}
@@ -233,7 +207,6 @@ const GeneralLedgerTemplate = ({
                   </div>
                 ))}
 
-                
                 <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
                   <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
                     {groupTotal.toLocaleString()}
@@ -245,7 +218,6 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      
       <div className="grid grid-cols-2 border border-t-0 border-black font-bold text-sm bg-gray-100 print:bg-transparent">
         <div className="border-r border-black p-2 flex justify-between">
           <span>Total Deposit/মোট জমা</span>
@@ -257,9 +229,7 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      
       <div className="mt-6 grid grid-cols-2 gap-8 break-inside-avoid">
-        
         <div className="border border-black p-4 text-sm shadow-sm print:shadow-none">
           <div className="flex justify-between mb-2">
             <span>Total Deposit:</span>
@@ -281,7 +251,6 @@ const GeneralLedgerTemplate = ({
           </div>
         </div>
 
-        
         <div className="border border-black text-xs shadow-sm print:shadow-none">
           <div className="grid grid-cols-3 border-b border-black font-bold text-center bg-gray-50 print:bg-transparent">
             <div className="p-1 border-r border-black">Note</div>
@@ -307,7 +276,6 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      
       <div className="mt-12 print:mt-16 pt-4 break-inside-avoid">
         <div className="grid grid-cols-2 gap-12 text-center text-xs">
           <div className="mt-8 pt-1 border-t border-black w-2/3 mx-auto">
@@ -321,8 +289,6 @@ const GeneralLedgerTemplate = ({
     </div>
   );
 };
-
-
 
 export default function GeneralLedger() {
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
@@ -434,13 +400,11 @@ export default function GeneralLedger() {
     styleElement.textContent = styles;
     doc.head.appendChild(styleElement);
 
-
     const fontLink = doc.createElement("link");
     fontLink.href =
       "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     fontLink.rel = "stylesheet";
     doc.head.appendChild(fontLink);
-
 
     const printStyle = doc.createElement("style");
     printStyle.textContent = `
@@ -452,7 +416,6 @@ export default function GeneralLedger() {
     `;
     doc.head.appendChild(printStyle);
 
- 
     const root = createRoot(container);
     root.render(
       <GeneralLedgerTemplate
@@ -463,7 +426,6 @@ export default function GeneralLedger() {
         todayStr={todayStr}
       />
     );
-
 
     setTimeout(() => {
       iframe.contentWindow?.focus();
@@ -483,7 +445,6 @@ export default function GeneralLedger() {
       <PageBreadcrumb pageTitle="General Ledger" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-
         <div className="flex flex-col sm:flex-row items-end gap-4 mb-8 print:hidden">
           <div className="w-full sm:w-auto">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
