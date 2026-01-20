@@ -85,5 +85,10 @@
   "ledger_report": "Ledger Report",
   "rate_setup": "Rate Setup",
   "delivery_list": "Delivery List",
-  "loan_report": "Loan Report"
+  "loan_report": "Loan Report",
+  "reports": "Reports",
+  "customer_list": "Customer List",
+  "glt_balance": "GLT Balance",
+  "view_report": "View Report",
+  "gl_crystal": "GL Crystal"
 }

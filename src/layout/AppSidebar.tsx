@@ -185,6 +185,17 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
       },
     ],
   },
+  {
+    name: t("reports"),
+    icon: <FcDocument />,
+    subItems: [
+      {
+        name: t("gl_crystal"),
+        icon: <FcDocument />,
+        path: "/reports/gl-crystal",
+      },
+    ],
+  },
 ];
 
 const AppSidebar: React.FC = () => {
@@ -434,13 +445,13 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-gray-800 dark:bg-gray-900 dark:border-gray-700 text-gray-100 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-700 dark:border-gray-800 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-gray-800 dark:bg-gray-900 dark:border-gray-700 text-gray-100 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-700 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
             : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+              ? "w-[290px]"
+              : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}

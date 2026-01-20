@@ -35,6 +35,7 @@ import JournalVoucherView from "./pages/Accounts/JournalVoucher/JournalVoucherVi
 import GeneralLedger from "./pages/Accounts/GL/GeneralLedger";
 import BankCashBalanceSheet from "./pages/Accounts/Reports/BankCashBalanceSheet";
 import LoanReports from "./pages/Accounts/Reports/LoanReports";
+import GLTCrystal from "./pages/Reports/GLTCrystal";
 
 export default function App() {
   return (
@@ -99,6 +100,8 @@ export default function App() {
                 element={<BankCashBalanceSheet />}
               />
               <Route path="/accounts/loan-report" element={<LoanReports />} />
+
+              <Route path="/reports/gl-crystal" element={<GLTCrystal />} />
             </Route>
           </Route>
 

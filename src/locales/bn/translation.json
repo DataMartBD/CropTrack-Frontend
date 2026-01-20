@@ -85,5 +85,10 @@
   "rate_setup": "রেট সেটআপ",
   "counted_token": "কাউন্টেড টোকেন",
   "delivery_list": "ডেলিভারি তালিকা",
-  "loan_report": "ঋণ রিপোর্ট"
+  "loan_report": "ঋণ রিপোর্ট",
+  "reports": "রিপোর্টস",
+  "customer_list": "গ্রাহক তালিকা",
+  "glt_balance": "জিএলটি ব্যালেন্স",
+  "view_report": "রিপোর্ট দেখুন",
+  "gl_crystal": "জিএল ক্রিস্টাল"
 }
