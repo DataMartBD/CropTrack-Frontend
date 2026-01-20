@@ -194,6 +194,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcDocument />,
         path: "/reports/gl-crystal",
       },
+      {
+        name: t("code_manual"),
+        icon: <FcDataSheet />,
+        path: "/reports/code-manual",
+      },
     ],
   },
 ];

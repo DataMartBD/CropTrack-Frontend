@@ -36,6 +36,7 @@ import GeneralLedger from "./pages/Accounts/GL/GeneralLedger";
 import BankCashBalanceSheet from "./pages/Accounts/Reports/BankCashBalanceSheet";
 import LoanReports from "./pages/Accounts/Reports/LoanReports";
 import GLTCrystal from "./pages/Reports/GLTCrystal";
+import CodeManual from "./pages/Reports/CodeManual";
 
 export default function App() {
   return (
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="/accounts/loan-report" element={<LoanReports />} />
 
               <Route path="/reports/gl-crystal" element={<GLTCrystal />} />
+              <Route path="/reports/code-manual" element={<CodeManual />} />
             </Route>
           </Route>
 
