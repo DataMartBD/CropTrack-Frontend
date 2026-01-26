@@ -18,7 +18,8 @@ const CrystalViewer: React.FC<CrystalViewerProps> = ({
   reportName,
   parameters = {},
   height = "80vh",
-  serverUrl = "http://localhost:8080",
+  // serverUrl = "http://localhost:8080",
+  serverUrl = "http://45.114.85.149:8080",
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
