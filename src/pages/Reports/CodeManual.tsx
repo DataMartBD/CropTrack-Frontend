@@ -6,7 +6,7 @@ const CodeManual = () => {
   return (
     <div>
       <PageMeta
-        title={`Crystal Report - Code Manual`}
+        title={`Report - Code Manual`}
         description="View Crystal Reports Code Manual"
       />
       <PageBreadcrumb pageTitle="Chart of Account Code Manual" />

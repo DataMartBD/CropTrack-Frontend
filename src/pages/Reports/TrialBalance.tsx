@@ -4,7 +4,7 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import YearPeriod from "../../components/Filters/YearPeriod";
 
-const GLTBalancePage = () => {
+const TrialBalancePage = () => {
   const [showReport, setShowReport] = useState(false);
   const reportRef = useRef<HTMLDivElement | null>(null);
 
@@ -16,7 +16,7 @@ const GLTBalancePage = () => {
 
   // Submitted parameters state
   const [activeParams, setActiveParams] = useState<typeof formData | null>(
-    null
+    null,
   );
 
   const handleGenerate = () => {
@@ -32,10 +32,10 @@ const GLTBalancePage = () => {
   return (
     <div>
       <PageMeta
-        title={`Crystal Report - GL Balance`}
-        description="View Crystal Reports GL Balance"
+        title={`Trial Balance`}
+        description="View Crystal Reports Trial Balance"
       />
-      <PageBreadcrumb pageTitle="General Ledger Crystal Report" />
+      <PageBreadcrumb pageTitle="Trial Balance" />
 
       <div className="w-full h-full pb-10">
         <YearPeriod
@@ -51,7 +51,7 @@ const GLTBalancePage = () => {
           {showReport && activeParams && (
             <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
               <CrystalViewer
-                reportName="glcode.rpt"
+                reportName="gltbal.rpt"
                 parameters={activeParams}
                 height="75vh"
               />
@@ -63,4 +63,4 @@ const GLTBalancePage = () => {
   );
 };
 
-export default GLTBalancePage;
+export default TrialBalancePage;

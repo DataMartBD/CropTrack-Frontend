@@ -183,6 +183,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcPieChart />,
         path: "/accounts/loan-report",
       },
+      {
+        name: "Balance Sheet",
+        icon: <FcDataSheet />,
+        path: "/accounts/report/balance-sheet",
+      },
     ],
   },
   {
@@ -190,9 +195,19 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
     icon: <FcDocument />,
     subItems: [
       {
-        name: t("gl_crystal"),
+        name: "Trial Balance",
         icon: <FcDocument />,
-        path: "/reports/gl-crystal",
+        path: "/reports/trial-balance",
+      },
+      {
+        name: "Balance Sheet",
+        icon: <FcDocument />,
+        path: "/reports/balance-sheet",
+      },
+      {
+        name: "Income Statement",
+        icon: <FcDocument />,
+        path: "/reports/income-statement",
       },
       {
         name: t("code_manual"),
@@ -261,14 +276,14 @@ const AppSidebar: React.FC = () => {
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
     (path: string) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   useEffect(() => {
