@@ -8,6 +8,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router";
+import SearchableSelect from "../../../components/ui/ut/SearchableSelect";
 
 const ButtonSpinner = () => (
   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -34,7 +35,6 @@ interface JournalHeader {
   xlong: string;
   xyear: number;
   xper: number;
-  xref: string;
   xstatusjv: string;
   xtrngl: string;
 }
@@ -68,7 +68,6 @@ export default function JournalVoucherEntry() {
     xlong: "",
     xyear: new Date().getFullYear(),
     xper: new Date().getMonth() + 1,
-    xref: "",
     xstatusjv: "Open",
     xtrngl: "JV--",
   });
@@ -104,6 +103,14 @@ export default function JournalVoucherEntry() {
     fetchAccounts();
   }, []);
 
+  const accountOptions = useMemo(() => {
+    return accounts.map((acc) => ({
+      ...acc,
+      customer_code: acc.xacc,
+      customer_name: acc.xdesc,
+    }));
+  }, [accounts]);
+
   const handleDateChange = (date: Date | null) => {
     if (date) {
       setHeader((prev) => ({
@@ -113,11 +120,6 @@ export default function JournalVoucherEntry() {
         xper: date.getMonth() + 1,
       }));
     }
-  };
-
-  const handleHeaderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setHeader((prev) => ({ ...prev, [name]: value }));
   };
 
   const addRow = () => {
@@ -149,7 +151,7 @@ export default function JournalVoucherEntry() {
   const handleDetailChange = (
     id: string,
     field: keyof JournalDetail,
-    value: any
+    value: any,
   ) => {
     setDetails((prev) =>
       prev.map((row) => {
@@ -169,7 +171,7 @@ export default function JournalVoucherEntry() {
           return updatedRow;
         }
         return row;
-      })
+      }),
     );
   };
 
@@ -187,8 +189,8 @@ export default function JournalVoucherEntry() {
               accountSource: account.xaccsource,
               xsub: "",
             }
-          : row
-      )
+          : row,
+      ),
     );
 
     if (
@@ -242,11 +244,11 @@ export default function JournalVoucherEntry() {
   const totals = useMemo(() => {
     const totalDebit = details.reduce(
       (sum, row) => sum + (parseFloat(row.debit) || 0),
-      0
+      0,
     );
     const totalCredit = details.reduce(
       (sum, row) => sum + (parseFloat(row.credit) || 0),
-      0
+      0,
     );
     return {
       debit: totalDebit,
@@ -257,10 +259,6 @@ export default function JournalVoucherEntry() {
 
   const handleSubmit = async () => {
     setTriedSubmit(true);
-    if (!header.xref.trim()) {
-      toast.error("Reference is required");
-      return;
-    }
     if (!header.xlong.trim()) {
       toast.error("Narration is required");
       return;
@@ -292,7 +290,7 @@ export default function JournalVoucherEntry() {
         xyear: year,
         xper: header.xdate.getMonth() + 1,
         xtrngl: header.xtrngl,
-        xref: header.xref,
+        xref: "",
         details: details.map((d) => ({
           xrow: d.xrow,
           xacc: d.xacc,
@@ -383,39 +381,23 @@ export default function JournalVoucherEntry() {
             </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
-              Reference <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="xref"
-              value={header.xref}
-              onChange={handleHeaderChange}
-              className={`w-full rounded-lg border px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-0 dark:bg-transparent dark:text-gray-200 ${
-                triedSubmit && !header.xref.trim()
-                  ? "border-red-500"
-                  : "border-gray-300 dark:border-gray-700"
-              }`}
-              placeholder="Ref No"
-            />
-          </div>
-
-          <div className="sm:col-span-2 lg:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-2">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200">
               Narration <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
+            <textarea
               name="xlong"
               value={header.xlong}
-              onChange={handleHeaderChange}
-              className={`w-full rounded-lg border px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-0 dark:bg-transparent dark:text-gray-200 ${
+              onChange={(e) =>
+                setHeader((prev) => ({ ...prev, xlong: e.target.value }))
+              }
+              rows={1}
+              className={`w-full rounded-lg border px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-0 dark:bg-transparent dark:text-gray-200 resize-y min-h-[42px] ${
                 triedSubmit && !header.xlong.trim()
                   ? "border-red-500"
                   : "border-gray-300 dark:border-gray-700"
               }`}
-              placeholder="Voucher Narrative"
+              placeholder="Enter detailed voucher narration..."
             />
           </div>
         </div>
@@ -430,7 +412,7 @@ export default function JournalVoucherEntry() {
           </button>
         </h3>
 
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 mb-6 pb-40">
           <table className="w-full min-w-[1000px] border-collapse bg-white text-left text-sm dark:bg-gray-800">
             <thead className="bg-gray-100 dark:bg-gray-900">
               <tr>
@@ -466,24 +448,17 @@ export default function JournalVoucherEntry() {
                   </td>
 
                   <td className="px-4 py-3">
-                    <select
-                      className={`w-full rounded border bg-transparent px-3 py-1.5 text-sm focus:border-brand-500 focus:ring-0 dark:text-gray-200 ${
-                        triedSubmit && !row.xacc
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-600"
-                      }`}
+                    <SearchableSelect
+                      options={accountOptions}
                       value={row.xacc}
-                      onChange={(e) =>
-                        handleAccountSelect(row.id, e.target.value)
-                      }
-                    >
-                      <option value="">Select Account</option>
-                      {accounts.map((acc) => (
-                        <option key={acc.xacc} value={acc.xacc}>
-                          {acc.xacc} - {acc.xdesc}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => handleAccountSelect(row.id, val)}
+                      placeholder="Select Account"
+                      labelRenderer={(opt) => (
+                        <span className="text-sm">
+                          {opt.xacc} - {opt.xdesc}
+                        </span>
+                      )}
+                    />
                   </td>
 
                   <td className="px-4 py-3">

@@ -10,6 +10,7 @@ import axios from "axios";
 import { ReportHeader } from "../../../components/reports/ReportHeader";
 import { getData } from "../../../services/apiClient";
 import { Toaster } from "react-hot-toast";
+import SearchableSelect from "../../../components/ui/ut/SearchableSelect";
 
 interface BalanceSheetItem {
   business_id: number;
@@ -48,7 +49,7 @@ const BankCashTemplate = ({
   const businessName = data[0]?.business_name || "Business Name";
   const totalClosingBalance = data.reduce(
     (sum, item) => sum + (parseFloat(item.closing_balance) || 0),
-    0
+    0,
   );
 
   return (
@@ -197,6 +198,38 @@ export default function BankCashBalanceSheet() {
     };
     fetchAccounts();
   }, []);
+
+  const accountOptions = useMemo(() => {
+    return [
+      {
+        customer_code: "",
+        customer_name: "All Accounts",
+        xacc: "",
+        xdesc: "All Accounts",
+      },
+      ...accounts.map((acc) => ({
+        ...acc,
+        customer_code: acc.xacc,
+        customer_name: acc.xdesc,
+      })),
+    ];
+  }, [accounts]);
+
+  const subAccountOptions = useMemo(() => {
+    return [
+      {
+        customer_code: "",
+        customer_name: `All ${accSource || "Sub-accounts"}`,
+        xsub: "",
+        xdesc: `All ${accSource || "Sub-accounts"}`,
+      },
+      ...subAccounts.map((sub) => ({
+        ...sub,
+        customer_code: sub.xsub,
+        customer_name: sub.xdesc,
+      })),
+    ];
+  }, [subAccounts, accSource]);
 
   const handleAccountChange = async (xacc: string) => {
     setSelectedAcc(xacc);
@@ -351,7 +384,7 @@ export default function BankCashBalanceSheet() {
         data={reportData}
         formattedDateRange={formattedDateRange}
         todayStr={todayStr}
-      />
+      />,
     );
 
     setTimeout(() => {
@@ -373,7 +406,7 @@ export default function BankCashBalanceSheet() {
       <PageBreadcrumb pageTitle="Ledger Report" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 items-end gap-4 mb-8 print:hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 items-end gap-4 mb-8 pb-32 print:hidden relative z-10">
           <div className="w-full">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               From Date
@@ -402,40 +435,38 @@ export default function BankCashBalanceSheet() {
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Account
             </label>
-            <select
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
+            <SearchableSelect
+              options={accountOptions}
               value={selectedAcc}
-              onChange={(e) => handleAccountChange(e.target.value)}
-            >
-              <option value="">All Accounts</option>
-              {accounts.map((acc) => (
-                <option key={acc.xacc} value={acc.xacc}>
-                  {acc.xacc} - {acc.xdesc}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleAccountChange(val)}
+              placeholder="All Accounts"
+              labelRenderer={(opt) => (
+                <span className="text-sm">
+                  {opt.xacc ? `${opt.xacc} - ${opt.xdesc}` : opt.xdesc}
+                </span>
+              )}
+            />
           </div>
 
           <div className="w-full">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Sub Account
             </label>
-            <select
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+            <SearchableSelect
+              options={subAccountOptions}
               value={selectedSub}
-              onChange={(e) => setSelectedSub(e.target.value)}
+              onChange={(val) => setSelectedSub(val)}
+              placeholder={`All ${accSource || "Sub-accounts"}`}
               disabled={
                 !accSource ||
                 (accSource !== "Subaccount" && accSource !== "Customer")
               }
-            >
-              <option value="">All {accSource || "Sub-accounts"}</option>
-              {subAccounts.map((sub, idx) => (
-                <option key={idx} value={sub.xsub}>
-                  {sub.xdesc}
-                </option>
-              ))}
-            </select>
+              labelRenderer={(opt) => (
+                <span className="text-sm">
+                  {opt.xsub ? `${opt.xsub} - ${opt.xdesc}` : opt.xdesc}
+                </span>
+              )}
+            />
           </div>
 
           <div className="flex gap-2 lg:col-span-1 xl:col-span-2">

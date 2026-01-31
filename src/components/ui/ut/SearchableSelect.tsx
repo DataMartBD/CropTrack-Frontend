@@ -14,8 +14,6 @@ type Props = {
   disabled?: boolean;
   labelRenderer?: (opt: OptionItem) => React.ReactNode; // optional custom label
   id?: string;
-  // maximum visible results without scroll
-  maxVisibleItems?: number;
 };
 
 export default function SearchableSelect({
@@ -26,7 +24,6 @@ export default function SearchableSelect({
   disabled = false,
   labelRenderer,
   id,
-  maxVisibleItems = 6,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +36,7 @@ export default function SearchableSelect({
     const term = searchTerm.trim().toLowerCase();
     if (!term) return options;
     return options.filter((opt) =>
-      `${opt.customer_code} ${opt.customer_name}`.toLowerCase().includes(term)
+      `${opt.customer_code} ${opt.customer_name}`.toLowerCase().includes(term),
     );
   }, [options, searchTerm]);
 
@@ -101,7 +98,6 @@ export default function SearchableSelect({
   }, [options, value]);
 
   // dynamic max-height for dropdown based on number of items (keeps CSS small)
-  const dropdownMaxHeight = Math.min(filtered.length, maxVisibleItems) * 42; // approx 42px per row
 
   return (
     <div ref={wrapperRef} className="relative w-full" id={id}>
@@ -116,11 +112,11 @@ export default function SearchableSelect({
           }
         }}
         onKeyDown={onKeyDown}
-        className={`w-full px-4 py-2.5 text-left rounded-lg border ${
+        className={`w-full px-4 py-3 text-left rounded-lg border ${
           disabled
             ? "border-gray-200 dark:border-gray-700"
-            : "border-gray-300 dark:border-gray-600"
-        } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] disabled:opacity-60 disabled:cursor-not-allowed`}
+            : "border-gray-300 dark:border-gray-600 shadow-sm"
+        } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#13725A] disabled:opacity-60 disabled:cursor-not-allowed hover:border-[#13725A] transition-all`}
       >
         <div className="flex items-center justify-between">
           <div className="truncate text-sm">
@@ -167,10 +163,7 @@ export default function SearchableSelect({
             />
           </div>
 
-          <div
-            className="max-h-60 overflow-auto"
-            style={{ maxHeight: dropdownMaxHeight }}
-          >
+          <div className="max-h-60 overflow-y-auto custom-scrollbar">
             {filtered.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                 No results
@@ -185,9 +178,9 @@ export default function SearchableSelect({
                     aria-selected={value === opt.customer_code}
                     onMouseEnter={() => setHighlightIndex(idx)}
                     onClick={() => onSelect(opt.customer_code)}
-                    className={`px-3 py-2 cursor-pointer text-sm truncate ${
+                    className={`px-4 py-3 cursor-pointer text-sm truncate ${
                       isHighlighted
-                        ? "bg-gray-100 dark:bg-gray-700"
+                        ? "bg-gray-100 dark:bg-gray-700 text-[#13725A] font-medium"
                         : "hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
                   >
