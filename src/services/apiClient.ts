@@ -1,17 +1,31 @@
 import axios from "axios";
 
 const apiBase = import.meta.env.VITE_API_BASE_URL;
-const token = window.localStorage.getItem("jwtToken");
+
+// Configure global axios defaults
+axios.defaults.baseURL = apiBase;
+
+// Add a request interceptor to the global axios instance
+// This will affect ALL axios requests in the app, including those in other files
+axios.interceptors.request.use(
+  (config) => {
+    const token = window.localStorage.getItem("jwtToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 
 // GET
 export async function getData<T>(
   endpoint: string,
-  params: Record<string, any> = {}
+  params: Record<string, any> = {},
 ): Promise<T> {
-  const response = await axios.get(`${apiBase}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const response = await axios.get(endpoint, {
     params,
   });
   return response.data.data;
@@ -21,13 +35,9 @@ export async function getData<T>(
 export async function postData<T, U>(
   endpoint: string,
   payload: T,
-  params: Record<string, any> = {}
+  params: Record<string, any> = {},
 ): Promise<U> {
-  const response = await axios.post(`${apiBase}${endpoint}`, payload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+  const response = await axios.post(endpoint, payload, {
     params,
   });
   return response.data;
@@ -37,14 +47,9 @@ export async function postData<T, U>(
 export async function putData<T, U>(
   endpoint: string,
   payload: T,
-  params: Record<string, any> = {}
+  params: Record<string, any> = {},
 ): Promise<U> {
-  const token = window.localStorage.getItem("jwtToken");
-  const response = await axios.put(`${apiBase}${endpoint}`, payload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+  const response = await axios.put(endpoint, payload, {
     params,
   });
   return response.data;
@@ -53,13 +58,9 @@ export async function putData<T, U>(
 // DELETE
 export async function deleteData<U>(
   endpoint: string,
-  params: Record<string, any> = {}
+  params: Record<string, any> = {},
 ): Promise<U> {
-  const token = window.localStorage.getItem("jwtToken");
-  const response = await axios.delete(`${apiBase}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const response = await axios.delete(endpoint, {
     params,
   });
   return response.data;

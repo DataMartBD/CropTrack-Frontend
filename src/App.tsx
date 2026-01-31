@@ -1,4 +1,6 @@
+import "./services/apiClient"; // Initialize global axios interceptor
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+
 import { AuthProvider } from "./context/AuthContext";
 import SignIn from "./pages/AuthPages/SignIn";
 import NotFound from "./pages/OtherPage/NotFound";
