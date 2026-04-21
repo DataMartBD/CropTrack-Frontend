@@ -11,8 +11,6 @@ import {
   FiBookOpen,
   FiCalendar,
   FiFileText,
-  FiCheckCircle,
-  FiAlertTriangle,
 } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -292,8 +290,6 @@ export default function JournalVoucherEntry() {
     };
   }, [details]);
 
-  const isBalanced = Math.abs(totals.diff) < 0.01 && totals.debit > 0;
-
   const handleSubmit = async () => {
     setTriedSubmit(true);
     if (!header.xlong.trim()) {
@@ -307,6 +303,10 @@ export default function JournalVoucherEntry() {
     }
     if (details.some((d) => !d.xacc)) {
       toast.error("All rows must have an account selected");
+      return;
+    }
+    if (details.some((d) => !d.xproj)) {
+      toast.error("All rows must have a project selected");
       return;
     }
     if (details.some((d) => d.xprime === 0)) {
@@ -496,7 +496,9 @@ export default function JournalVoucherEntry() {
                 <th className="px-3 py-2.5 font-semibold w-44">
                   Sub / Customer
                 </th>
-                <th className="px-3 py-2.5 font-semibold w-40">Project</th>
+                <th className="px-3 py-2.5 font-semibold w-40">
+                  Project <span className="text-red-500">*</span>
+                </th>
                 <th className="px-3 py-2.5 font-semibold w-48">Description</th>
                 <th className="px-3 py-2.5 font-semibold w-32 text-right">
                   Debit
@@ -564,7 +566,11 @@ export default function JournalVoucherEntry() {
 
                   <td className="px-3 py-2">
                     <select
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-0 dark:bg-gray-900 dark:text-gray-200 ${
+                        triedSubmit && !row.xproj
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-700"
+                      }`}
                       value={row.xproj}
                       onChange={(e) =>
                         handleDetailChange(row.id, "xproj", e.target.value)
@@ -638,69 +644,40 @@ export default function JournalVoucherEntry() {
                 </tr>
               ))}
             </tbody>
+            <tfoot className="bg-gray-50 dark:bg-gray-900/40 font-semibold text-gray-900 dark:text-gray-100">
+              <tr>
+                <td colSpan={5} className="px-3 py-3 text-right">
+                  Totals:
+                </td>
+                <td className="px-3 py-3 text-right font-mono">
+                  {formatAmount(totals.debit)}
+                </td>
+                <td className="px-3 py-3 text-right font-mono">
+                  {formatAmount(totals.credit)}
+                </td>
+                <td></td>
+              </tr>
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-3 py-2 text-right text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                >
+                  Difference:
+                </td>
+                <td
+                  colSpan={2}
+                  className={`px-3 py-2 text-center font-mono ${
+                    Math.abs(totals.diff) < 0.01
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {formatAmount(Math.abs(totals.diff))}
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
           </table>
-        </div>
-
-        {/* Totals panel */}
-        <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 px-5 py-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 px-4 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Total Debit
-              </div>
-              <div className="mt-1 text-lg font-mono font-semibold text-gray-900 dark:text-white">
-                {formatAmount(totals.debit)}
-              </div>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 px-4 py-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Total Credit
-              </div>
-              <div className="mt-1 text-lg font-mono font-semibold text-gray-900 dark:text-white">
-                {formatAmount(totals.credit)}
-              </div>
-            </div>
-            <div
-              className={`rounded-lg border px-4 py-3 ${
-                isBalanced
-                  ? "border-green-200 bg-green-50 dark:border-green-500/30 dark:bg-green-500/10"
-                  : totals.debit === 0 && totals.credit === 0
-                  ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
-                  : "border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10"
-              }`}
-            >
-              <div
-                className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${
-                  isBalanced
-                    ? "text-green-700 dark:text-green-400"
-                    : totals.debit === 0 && totals.credit === 0
-                    ? "text-gray-500 dark:text-gray-400"
-                    : "text-red-700 dark:text-red-400"
-                }`}
-              >
-                {isBalanced ? (
-                  <>
-                    <FiCheckCircle size={12} /> Balanced
-                  </>
-                ) : (
-                  <>
-                    <FiAlertTriangle size={12} /> Difference
-                  </>
-                )}
-              </div>
-              <div
-                className={`mt-1 text-lg font-mono font-semibold ${
-                  isBalanced
-                    ? "text-green-700 dark:text-green-400"
-                    : totals.debit === 0 && totals.credit === 0
-                    ? "text-gray-900 dark:text-white"
-                    : "text-red-700 dark:text-red-400"
-                }`}
-              >
-                {formatAmount(Math.abs(totals.diff))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

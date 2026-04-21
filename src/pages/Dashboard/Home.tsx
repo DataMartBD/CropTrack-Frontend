@@ -2,12 +2,8 @@ import PageMeta from "../../components/common/PageMeta";
 // import { useEffect, useState } from "react";
 import Farm from "/images/cold-storage/farm.svg";
 import {
-  FcContacts,
-  FcFrame,
   FcInspection,
-  FcInTransit,
   FcPaid,
-  FcSafe,
   FcShipped,FcMoneyTransfer} from "react-icons/fc";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
