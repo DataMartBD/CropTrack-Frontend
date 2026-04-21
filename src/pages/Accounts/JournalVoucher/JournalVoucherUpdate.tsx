@@ -529,14 +529,14 @@ export default function JournalVoucherUpdate() {
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/60 text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
+                <th className="px-3 py-2.5 font-semibold w-40">
+                  Project <span className="text-red-500">*</span>
+                </th>
                 <th className="px-3 py-2.5 font-semibold w-72">
                   Account <span className="text-red-500">*</span>
                 </th>
                 <th className="px-3 py-2.5 font-semibold w-44">
                   Sub / Customer
-                </th>
-                <th className="px-3 py-2.5 font-semibold w-40">
-                  Project <span className="text-red-500">*</span>
                 </th>
                 <th className="px-3 py-2.5 font-semibold w-48">Description</th>
                 <th className="px-3 py-2.5 font-semibold w-32 text-right">
@@ -558,6 +558,27 @@ export default function JournalVoucherUpdate() {
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 text-xs font-mono text-gray-600 dark:text-gray-300">
                       {row.xrow}
                     </span>
+                  </td>
+
+                  <td className="px-3 py-2">
+                    <select
+                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-0 dark:bg-gray-900 dark:text-gray-200 ${
+                        triedSubmit && !row.xproj
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-700"
+                      }`}
+                      value={row.xproj}
+                      onChange={(e) =>
+                        handleDetailChange(row.id, "xproj", e.target.value)
+                      }
+                    >
+                      <option value="">Select Project</option>
+                      {projects.map((p) => (
+                        <option key={p.xcode} value={p.xcode}>
+                          {p.xcode}
+                        </option>
+                      ))}
+                    </select>
                   </td>
 
                   <td className="px-3 py-2">
@@ -601,27 +622,6 @@ export default function JournalVoucherUpdate() {
                         n/a
                       </span>
                     )}
-                  </td>
-
-                  <td className="px-3 py-2">
-                    <select
-                      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-0 dark:bg-gray-900 dark:text-gray-200 ${
-                        triedSubmit && !row.xproj
-                          ? "border-red-500"
-                          : "border-gray-300 dark:border-gray-700"
-                      }`}
-                      value={row.xproj}
-                      onChange={(e) =>
-                        handleDetailChange(row.id, "xproj", e.target.value)
-                      }
-                    >
-                      <option value="">Select Project</option>
-                      {projects.map((p) => (
-                        <option key={p.xcode} value={p.xcode}>
-                          {p.xcode}
-                        </option>
-                      ))}
-                    </select>
                   </td>
 
                   <td className="px-3 py-2">
