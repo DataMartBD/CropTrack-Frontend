@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type OptionItem = {
   customer_code: string; // unique id/value
@@ -16,6 +17,8 @@ type Props = {
   id?: string;
 };
 
+type MenuRect = { top: number; left: number; width: number; openUp: boolean };
+
 export default function SearchableSelect({
   options,
   value,
@@ -28,7 +31,9 @@ export default function SearchableSelect({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [menuRect, setMenuRect] = useState<MenuRect | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   // memoize filtered options for performance
@@ -43,11 +48,43 @@ export default function SearchableSelect({
   // reset highlight when filtered changes
   useEffect(() => setHighlightIndex(0), [filtered]);
 
-  // close on outside click
+  // compute & track menu position while open — using fixed + portal so the
+  // dropdown is never clipped by ancestors like `overflow-x-auto` wrappers.
+  useEffect(() => {
+    if (!open) {
+      setMenuRect(null);
+      return;
+    }
+    const update = () => {
+      const el = wrapperRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const menuHeight = 320; // rough estimate (search + max list)
+      const spaceBelow = window.innerHeight - r.bottom;
+      const openUp = spaceBelow < menuHeight && r.top > menuHeight;
+      setMenuRect({
+        top: openUp ? r.top - 4 : r.bottom + 4,
+        left: r.left,
+        width: r.width,
+        openUp,
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
+
+  // close on outside click (check both wrapper and portaled menu)
   useEffect(() => {
     function onDoc(e: MouseEvent) {
-      if (!wrapperRef.current) return;
-      if (!wrapperRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (wrapperRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -97,8 +134,6 @@ export default function SearchableSelect({
     return options.find((o) => o.customer_code === value);
   }, [options, value]);
 
-  // dynamic max-height for dropdown based on number of items (keeps CSS small)
-
   return (
     <div ref={wrapperRef} className="relative w-full" id={id}>
       {/* button / control */}
@@ -144,56 +179,69 @@ export default function SearchableSelect({
         </div>
       </button>
 
-      {/* dropdown */}
-      {open && (
-        <div
-          className="absolute z-50 mt-1 w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg"
-          role="listbox"
-          aria-expanded={open}
-        >
-          <div className="px-3 py-2">
-            <input
-              ref={inputRef}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={onKeyDown}
-              autoFocus
-              placeholder="Search by ID or Name..."
-              className="w-full bg-transparent text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none px-2 py-2"
-            />
-          </div>
+      {/* dropdown (portaled so parent `overflow-*` can't clip it) */}
+      {open &&
+        menuRect &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              position: "fixed",
+              top: menuRect.openUp ? undefined : menuRect.top,
+              bottom: menuRect.openUp
+                ? window.innerHeight - menuRect.top
+                : undefined,
+              left: menuRect.left,
+              width: menuRect.width,
+            }}
+            className="z-[1000] rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg"
+            role="listbox"
+            aria-expanded={open}
+          >
+            <div className="px-3 py-2">
+              <input
+                ref={inputRef}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={onKeyDown}
+                autoFocus
+                placeholder="Search by ID or Name..."
+                className="w-full bg-transparent text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none px-2 py-2"
+              />
+            </div>
 
-          <div className="max-h-60 overflow-y-auto custom-scrollbar">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                No results
-              </div>
-            ) : (
-              filtered.map((opt, idx) => {
-                const isHighlighted = idx === highlightIndex;
-                return (
-                  <div
-                    key={opt.customer_code}
-                    role="option"
-                    aria-selected={value === opt.customer_code}
-                    onMouseEnter={() => setHighlightIndex(idx)}
-                    onClick={() => onSelect(opt.customer_code)}
-                    className={`px-4 py-3 cursor-pointer text-sm truncate ${
-                      isHighlighted
-                        ? "bg-gray-100 dark:bg-gray-700 text-[#13725A] font-medium"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {labelRenderer
-                      ? labelRenderer(opt)
-                      : `${opt.customer_code} — ${opt.customer_name}`}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+            <div className="max-h-72 overflow-y-auto custom-scrollbar">
+              {filtered.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  No results
+                </div>
+              ) : (
+                filtered.map((opt, idx) => {
+                  const isHighlighted = idx === highlightIndex;
+                  return (
+                    <div
+                      key={opt.customer_code}
+                      role="option"
+                      aria-selected={value === opt.customer_code}
+                      onMouseEnter={() => setHighlightIndex(idx)}
+                      onClick={() => onSelect(opt.customer_code)}
+                      className={`px-4 py-3 cursor-pointer text-sm truncate ${
+                        isHighlighted
+                          ? "bg-gray-100 dark:bg-gray-700 text-[#13725A] font-medium"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {labelRenderer
+                        ? labelRenderer(opt)
+                        : `${opt.customer_code} — ${opt.customer_name}`}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
