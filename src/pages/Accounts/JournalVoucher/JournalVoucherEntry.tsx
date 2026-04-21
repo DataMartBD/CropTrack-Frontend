@@ -248,7 +248,11 @@ export default function JournalVoucherEntry() {
       let normalizedData: SubAccount[] = [];
 
       if (source === "Subaccount") {
-        normalizedData = response;
+        normalizedData = (response as any[]).map((s) => ({
+          ...s,
+          customer_code: s.xsub,
+          customer_name: s.xdesc,
+        }));
       } else if (source === "Customer") {
         normalizedData = (response as any[]).map((c) => ({
           xacc: xacc,
@@ -535,20 +539,22 @@ export default function JournalVoucherEntry() {
                   <td className="px-3 py-2">
                     {row.accountSource === "Subaccount" ||
                     row.accountSource === "Customer" ? (
-                      <select
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                      <SearchableSelect
+                        options={getSubOptions(row) as any}
                         value={row.xsub}
-                        onChange={(e) =>
-                          handleDetailChange(row.id, "xsub", e.target.value)
+                        onChange={(val) =>
+                          handleDetailChange(row.id, "xsub", val)
                         }
-                      >
-                        <option value="">Select {row.accountSource}</option>
-                        {getSubOptions(row).map((sub, idx) => (
-                          <option key={idx} value={sub.xsub}>
-                            {sub.xdesc}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder={`--- Select ${row.accountSource}`}
+                        labelRenderer={(opt) => (
+                          <span className="text-sm">
+                            <span className="font-mono text-gray-500">
+                              {opt.xsub}
+                            </span>{" "}
+                            — {opt.xdesc}
+                          </span>
+                        )}
+                      />
                     ) : (
                       <span className="inline-flex items-center justify-center w-full text-gray-300 dark:text-gray-600 text-xs italic">
                         n/a
