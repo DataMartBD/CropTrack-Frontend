@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import CrystalViewer from "../../cr/CrystalViewer";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import YearPeriod from "../../components/Filters/YearPeriod";
+import TrialBalanceFilter from "../../components/Filters/TrialBalanceFilter";
 
 const TrialBalancePage = () => {
   const [showReport, setShowReport] = useState(false);
@@ -12,6 +12,7 @@ const TrialBalancePage = () => {
     zid: "1",
     year: new Date().getFullYear().toString(),
     period: (new Date().getMonth() + 1).toString(),
+    project: "All",
   });
 
   // Submitted parameters state
@@ -38,7 +39,7 @@ const TrialBalancePage = () => {
       <PageBreadcrumb pageTitle="Trial Balance" />
 
       <div className="w-full h-full pb-10">
-        <YearPeriod
+        <TrialBalanceFilter
           formData={formData}
           setFormData={setFormData}
           onGenerate={handleGenerate}
@@ -51,7 +52,8 @@ const TrialBalancePage = () => {
           {showReport && activeParams && (
             <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
               <CrystalViewer
-                reportName="gltbal.rpt"
+                reportName="gltbalnw.rpt"
+                // reportName="trial_balance.rpt"
                 parameters={activeParams}
                 height="75vh"
               />

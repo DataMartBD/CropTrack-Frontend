@@ -91,5 +91,8 @@
   "glt_balance": "GLT Balance",
   "view_report": "View Report",
   "gl_crystal": "GL Crystal",
-  "code_manual": "Code Manual"
+  "code_manual": "Code Manual",
+  "trial_balance": "Trial Balance",
+  "balance_sheet": "Balance Sheet",
+  "income_statement": "Income Statement"
 }

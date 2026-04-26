@@ -30,6 +30,7 @@ interface JournalVoucherData {
     xsub: string;
     xprime: string | number;
     xlong: string;
+    xproj: string;
   }[];
 }
 
@@ -58,7 +59,7 @@ const JournalVoucherTemplate = ({
 }) => {
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-0 max-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      <ReportHeader title="রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪">
+      <ReportHeader title="রাহবার হিমাগার (প্রাঃ) লিমিটেড">
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
           <span className="text-green-800 font-medium">মোবাইল:</span>{" "}
           ০১৭০১৮৮৯০৪, ০১৭৪০১৩৩১৪৪
@@ -162,6 +163,9 @@ const JournalVoucherTemplate = ({
                       <div className="text-gray-500 text-[10px]">
                         {row.xacc}
                         {row.xsub ? ` - ${subName || row.xsub}` : ""}
+                      </div>
+                      <div className="text-[#076730] text-[10px] font-semibold ">
+                        Project: {row.xproj}
                       </div>
                     </td>
                     <td className="px-2 py-1.5 text-gray-600 max-w-xs truncate print:whitespace-normal print:overflow-visible">

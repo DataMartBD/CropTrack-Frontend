@@ -31,8 +31,8 @@ export default function Home() {
             <h1 className="text-4xl md:text-4xl  font-semibold p-1 text-[#F0DA78] tracking-loose">
               CropTrack
             </h1>
-            <h2 className="text-2xl text-white md:text-2xl leading-relaxed md:leading-snug mb-1">
-              Rahabar Cold Storage
+            <h2 className="text-2xl text-white md:text-3xl leading-relaxed md:leading-snug mb-1">
+              Rahbar Cold Storage
             </h2>
           </div>
         </div>

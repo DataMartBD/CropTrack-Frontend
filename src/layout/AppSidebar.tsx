@@ -184,7 +184,7 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         path: "/accounts/loan-report",
       },
       {
-        name: "Balance Sheet",
+        name: t("balance_sheet"),
         icon: <FcDataSheet />,
         path: "/accounts/report/balance-sheet",
       },
@@ -195,17 +195,17 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
     icon: <FcDocument />,
     subItems: [
       {
-        name: "Trial Balance",
+        name: t("trial_balance"),
         icon: <FcDocument />,
         path: "/reports/trial-balance",
       },
       {
-        name: "Balance Sheet",
+        name: t("balance_sheet"),
         icon: <FcDocument />,
         path: "/reports/balance-sheet",
       },
       {
-        name: "Income Statement",
+        name: t("income_statement"),
         icon: <FcDocument />,
         path: "/reports/income-statement",
       },
@@ -572,7 +572,7 @@ const AppSidebar: React.FC = () => {
           )}
         </Link>
       </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+      <div className="flex-1 flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
             <div>
@@ -595,6 +595,18 @@ const AppSidebar: React.FC = () => {
         </nav>
         {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
+
+      {/* Added Footer Text Block */}
+      <div 
+        className={`mt-auto pb-2 pt-2 transition-all duration-300 ease-in-out ${
+          isExpanded || isHovered || isMobileOpen ? "block" : "hidden"
+        }`}
+      >
+        <p className="text-sm font-semibold text-gray-200 dark:text-gray-500">
+          © DataMart<span className="text-[#F97317]">BD Limited</span>
+        </p>
+      </div>
+
     </aside>
   );
 };
