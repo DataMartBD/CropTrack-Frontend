@@ -4,12 +4,14 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import GLReportFilter from "../../components/Filters/GLReportFilter";
 
+
 const BalanceSheetCrystal = () => {
   const [showReport, setShowReport] = useState(false);
   const reportRef = useRef<HTMLDivElement | null>(null);
 
   const [formData, setFormData] = useState({
     zid: "1",
+    project: "All",
     year: new Date().getFullYear().toString(),
     period: (new Date().getMonth() + 1).toString(),
     hlevel: "",
@@ -53,7 +55,7 @@ const BalanceSheetCrystal = () => {
           {showReport && activeParams && (
             <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
               <CrystalViewer
-                reportName="glbalsht.rpt"
+                reportName="glbalshtnw.rpt"
                 parameters={activeParams}
                 height="75vh"
               />

@@ -10,6 +10,7 @@ const IncomeStatementCrystal = () => {
 
   const [formData, setFormData] = useState({
     zid: "1",
+    project: "All",
     year: new Date().getFullYear().toString(),
     period: (new Date().getMonth() + 1).toString(),
     hlevel: "",
@@ -53,7 +54,7 @@ const IncomeStatementCrystal = () => {
           {showReport && activeParams && (
             <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
               <CrystalViewer
-                reportName="glpl.rpt"
+                reportName="glplnw.rpt"
                 parameters={activeParams}
                 height="75vh"
               />

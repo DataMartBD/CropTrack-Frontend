@@ -1,10 +1,18 @@
-import React, { ChangeEvent } from "react";
+import React, { ChangeEvent, useState, useEffect } from "react";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Select from "../form/Select";
+import { getData } from "../../services/apiClient";
+
+
+interface ProjectCode {
+  xtype: string;
+  xcode: string;
+}
 
 interface GLReportFilterProps {
   formData: {
+    project: string;
     year: string;
     period: string;
     hlevel: string;
@@ -22,6 +30,28 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
   onGenerate,
   isLoading = false,
 }) => {
+  const [projects, setProjects] = useState<string[]>(["All"]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
+   useEffect(() => {
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const data = await getData<ProjectCode[]>(
+          "/masterdata/common-codes/list/",
+          { xtype: "Project" },
+        );
+        const codes = (data || []).map((p) => p.xcode);
+        setProjects(["All", ...codes]);
+      } catch (err) {
+        console.error("Failed to load projects", err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    fetchProjects();
+  }, []);
+
   const hlevelOptions = [
     { value: "1", label: "1" },
     { value: "2", label: "2" },
@@ -40,6 +70,27 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
   return (
     <div className="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 p-5 rounded-xl mb-6 shadow-sm">
       <div className="flex flex-wrap items-end gap-5">
+         <div className="w-full sm:w-48">
+          <Label className="mb-2 text-sm">Project</Label>
+          <select
+            value={formData.project}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+              setFormData({ ...formData, project: e.target.value })
+            }
+            disabled={loadingProjects}
+            className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-9 text-sm shadow-theme-xs text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 disabled:opacity-50"
+          >
+            {projects.map((code) => (
+              <option
+                key={code}
+                value={code}
+                className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
+              >
+                {code}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="w-full sm:w-32">
           <Label className="mb-2 text-sm">Year</Label>
           <Input
