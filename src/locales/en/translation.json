@@ -94,5 +94,6 @@
   "code_manual": "Code Manual",
   "trial_balance": "Trial Balance",
   "balance_sheet": "Balance Sheet",
-  "income_statement": "Income Statement"
+  "income_statement": "Income Statement",
+  "ledger_details": "Ledger Details"
 }

@@ -40,6 +40,7 @@ import BankCashBalanceSheet from "./pages/Accounts/Reports/BankCashBalanceSheet"
 import LoanReports from "./pages/Accounts/Reports/LoanReports";
 import TrialBalance from "./pages/Reports/TrialBalance";
 import CodeManual from "./pages/Reports/CodeManual";
+import LedgerDetails from "./pages/Reports/LedgerDetails";
 import BalanceSheetCrystal from "./pages/Reports/BalanceSheetCrystal";
 import IncomeStatementCrystal from "./pages/Reports/IncomeStatementCrystal";
 
@@ -121,6 +122,7 @@ export default function App() {
                 element={<IncomeStatementCrystal />}
               />
               <Route path="/reports/code-manual" element={<CodeManual />} />
+              <Route path="/reports/gl-ledger" element={<LedgerDetails />} />
             </Route>
           </Route>
 
