@@ -1,17 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-// import { getData } from "../../../services/apiClient";
+import { getData } from "../../../services/apiClient";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
 import { ReportHeader } from "../../../components/reports/ReportHeader";
 
+interface ProjectCode {
+  xtype: string;
+  xcode: string;
+}
+
 interface LedgerItem {
   xvoucher: string;
+  xproj?: string;
   business_id_id: number;
   business_name: string;
   xdate: string;
@@ -41,13 +47,19 @@ interface LedgerResponse {
 }
 
 const groupData = (items: LedgerItem[]) => {
-  const groups: Record<string, LedgerItem[]> = {};
+  const groups: Record<string, Record<string, LedgerItem[]>> = {};
   items.forEach((item) => {
-    const key = item.xdesc || "Uncategorized";
-    if (!groups[key]) {
-      groups[key] = [];
+    const projKey = item.xproj || "General";
+    const accKey = item.xacc
+      ? `${item.xacc} - ${item.xdesc}`
+      : item.xdesc || "Uncategorized";
+    if (!groups[projKey]) {
+      groups[projKey] = {};
     }
-    groups[key].push(item);
+    if (!groups[projKey][accKey]) {
+      groups[projKey][accKey] = [];
+    }
+    groups[projKey][accKey].push(item);
   });
   return groups;
 };
@@ -68,8 +80,8 @@ const GeneralLedgerTemplate = ({
   todayStr,
 }: {
   ledgerData: LedgerResponse;
-  groupedDeposits: Record<string, LedgerItem[]>;
-  groupedExpenses: Record<string, LedgerItem[]>;
+  groupedDeposits: Record<string, Record<string, LedgerItem[]>>;
+  groupedExpenses: Record<string, Record<string, LedgerItem[]>>;
   formattedDateRange: string;
   todayStr: string;
 }) => {
@@ -80,7 +92,7 @@ const GeneralLedgerTemplate = ({
       <ReportHeader
         title={
           ledgerData.deposits[0]?.business_name ||
-          "রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪"
+          "রাহবার হিমাগার (প্রাঃ) লিমিটেড"
         }
       >
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
@@ -109,52 +121,70 @@ const GeneralLedgerTemplate = ({
             <span>Amount/টাকা</span>
           </div>
 
-          {Object.keys(groupedDeposits).map((groupName) => {
-            const items = groupedDeposits[groupName];
-            const groupTotal = getGroupTotal(items, "deposit");
+          {Object.keys(groupedDeposits).map((projName) => {
+            const projGroups = groupedDeposits[projName];
+            const projItems = Object.values(projGroups).flat();
+            const projTotal = getGroupTotal(projItems, "deposit");
 
             return (
               <div
-                key={groupName}
+                key={projName}
                 className="border-b border-black last:border-b-0 break-inside-avoid"
               >
-                <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
-                  <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
-                    {groupName}
+                <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
+                  <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
+                    Project: {projName}
                   </div>
-                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300"></div>
+                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
+                    {projTotal.toLocaleString()}
+                  </div>
                 </div>
 
-                {items.map((item, idx) => (
-                  <div
-                    key={item.xvoucher + idx}
-                    className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
-                  >
-                    <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
-                        <span>{item.xdate}</span>
-                        {item.subaccname && (
-                          <div className="text-[10px] text-gray-600">
-                            {item.subaccname}
+                {Object.keys(projGroups).map((accName) => {
+                  const items = projGroups[accName];
+                  const accTotal = getGroupTotal(items, "deposit");
+                  return (
+                    <div
+                      key={accName}
+                      className="border-b border-gray-300 last:border-b-0"
+                    >
+                      <div className="flex border-b border-gray-200 bg-gray-50/50 print:bg-transparent">
+                        <div className="flex-1 px-2 py-1 font-semibold text-[11px] uppercase tracking-wide text-gray-700">
+                          {accName}
+                        </div>
+                        <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-[11px] border-l border-gray-200"></div>
+                      </div>
+
+                      {items.map((item, idx) => (
+                        <div
+                          key={item.xvoucher + idx}
+                          className="flex border-b border-gray-100 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
+                        >
+                          <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-100 relative">
+                            <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
+                              <span>{item.xdate}</span>
+                              {item.subaccname && (
+                                <div className="text-[10px] text-gray-600">
+                                  {item.subaccname}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-gray-800">{item.xnote}</div>
                           </div>
-                        )}
-                      </div>
+                          <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
+                            {parseFloat(item.deposit).toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
 
-                      <div className="text-gray-800">
-                        {item.xnote}
+                      <div className="flex justify-end bg-gray-50 print:bg-transparent py-0.5">
+                        <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-200 border-dashed">
+                          {accTotal.toLocaleString()}
+                        </div>
                       </div>
                     </div>
-                    <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
-                      {parseFloat(item.deposit).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
-                  <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
-                    {groupTotal.toLocaleString()}
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -166,52 +196,71 @@ const GeneralLedgerTemplate = ({
             <span>Amount/টাকা</span>
           </div>
 
-          {Object.keys(groupedExpenses).map((groupName) => {
-            const items = groupedExpenses[groupName];
-            const groupTotal = getGroupTotal(items, "expense");
+          {Object.keys(groupedExpenses).map((projName) => {
+            const projGroups = groupedExpenses[projName];
+            const projItems = Object.values(projGroups).flat();
+            const projTotal = getGroupTotal(projItems, "expense");
 
             return (
               <div
-                key={groupName}
-                className="border-b border-black last:border-b-0 break-inside-avoid"
+                key={projName}
+                className="border-b border-black last:border-b-0"
               >
-                <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
-                  <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
-                    {groupName}
+                <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
+                  <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
+                    Project: {projName}
                   </div>
-                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-xs border-l border-gray-300"></div>
+                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
+                    {projTotal.toLocaleString()}
+                  </div>
                 </div>
 
-                {items.map((item, idx) => (
-                  <div
-                    key={item.xvoucher + idx}
-                    className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
-                  >
-                    <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
-                        <span>{item.xdate}</span>
-                        {item.subaccname && (
-                          <div className="text-[10px] text-gray-600">
-                            {item.subaccname}
+                {Object.keys(projGroups).map((accName) => {
+                  const items = projGroups[accName];
+                  const accTotal = getGroupTotal(items, "expense");
+
+                  return (
+                    <div
+                      key={accName}
+                      className="border-b border-gray-300 last:border-b-0 break-inside-avoid"
+                    >
+                      <div className="flex border-b border-gray-200 bg-gray-50/50 print:bg-transparent">
+                        <div className="flex-1 px-2 py-1 font-semibold text-[11px] uppercase tracking-wide text-gray-700">
+                          {accName}
+                        </div>
+                        <div className="w-24 sm:w-32 px-2 py-1 text-right font-semibold text-[11px] border-l border-gray-200"></div>
+                      </div>
+
+                      {items.map((item, idx) => (
+                        <div
+                          key={item.xvoucher + idx}
+                          className="flex border-b border-gray-100 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
+                        >
+                          <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-100 relative">
+                            <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
+                              <span>{item.xdate}</span>
+                              {item.subaccname && (
+                                <div className="text-[10px] text-gray-600">
+                                  {item.subaccname}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-gray-800">{item.xnote}</div>
                           </div>
-                        )}
-                      </div>
+                          <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
+                            {parseFloat(item.expense).toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
 
-                      <div className=" text-gray-800">
-                        {item.xnote}
+                      <div className="flex justify-end bg-gray-50 print:bg-transparent py-0.5">
+                        <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-200 border-dashed">
+                          {accTotal.toLocaleString()}
+                        </div>
                       </div>
                     </div>
-                    <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
-                      {parseFloat(item.expense).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
-                  <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
-                    {groupTotal.toLocaleString()}
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -229,52 +278,6 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-8 break-inside-avoid">
-        <div className="border border-black p-4 text-sm shadow-sm print:shadow-none">
-          <div className="flex justify-between mb-2">
-            <span>Total Deposit:</span>
-            <span className="font-bold">
-              {ledgerData.summary.total_deposit.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex justify-between mb-2 pb-2 border-b border-gray-300">
-            <span>Total Expense:</span>
-            <span className="font-bold">
-              {ledgerData.summary.total_expense.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex justify-between text-base mt-2">
-            <span className="font-bold">Balance:</span>
-            <span className="font-bold  border-b-2 border-double border-[#121312]">
-              {ledgerData.summary.balance.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        <div className="border border-black text-xs shadow-sm print:shadow-none">
-          <div className="grid grid-cols-3 border-b border-black font-bold text-center bg-gray-50 print:bg-transparent">
-            <div className="p-1 border-r border-black">Note</div>
-            <div className="p-1 border-r border-black">Count</div>
-            <div className="p-1">Amount</div>
-          </div>
-          {[1000, 500, 200, 100, 50, 20, 10, 5].map((note) => (
-            <div
-              key={note}
-              className="grid grid-cols-3 border-b border-gray-300 last:border-b-0 text-right"
-            >
-              <div className="p-1 pr-2 border-r border-gray-300 font-medium">
-                {note} x
-              </div>
-              <div className="p-1 border-r border-gray-300"></div>
-              <div className="p-1"></div>
-            </div>
-          ))}
-          <div className="grid grid-cols-2 border-t border-black font-bold">
-            <div className="p-1 text-right px-2">Total Cash:</div>
-            <div className="p-1 text-right px-2"></div>
-          </div>
-        </div>
-      </div>
 
       <div className="mt-12 print:mt-16 pt-4 break-inside-avoid">
         <div className="grid grid-cols-2 gap-12 text-center text-xs">
@@ -293,8 +296,30 @@ const GeneralLedgerTemplate = ({
 export default function GeneralLedger() {
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
   const [toDate, setToDate] = useState<Date | null>(new Date());
+  const [project, setProject] = useState<string>("All");
+  const [projects, setProjects] = useState<string[]>(["All"]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ledgerData, setLedgerData] = useState<LedgerResponse | null>(null);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const data = await getData<ProjectCode[]>(
+          "/masterdata/common-codes/list/",
+          { xtype: "Project" },
+        );
+        const codes = (data || []).map((p) => p.xcode);
+        setProjects(["All", ...codes]);
+      } catch (err) {
+        console.error("Failed to load projects", err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleGetLedger = async () => {
     if (!fromDate || !toDate) return;
@@ -313,16 +338,20 @@ export default function GeneralLedger() {
       const apiBase = import.meta.env.VITE_API_BASE_URL;
       const token = window.localStorage.getItem("jwtToken");
 
-      console.log(`Fetching ledger from ${from} to ${to}`);
+      let url = `${apiBase}/accounts/report/daily-ledger/?from_date=${from}&to_date=${to}`;
+      if (project !== "All") {
+        url += `&xproj=${encodeURIComponent(project)}`;
+      }
 
-      const response = await axios.get(
-        `${apiBase}/accounts/report/daily-ledger/?from_date=${from}&to_date=${to}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      console.log(
+        `Fetching ledger from ${from} to ${to} for project ${project}`,
       );
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       console.log("General Ledger Response:", response);
 
@@ -424,7 +453,7 @@ export default function GeneralLedger() {
         groupedExpenses={groupedExpenses}
         formattedDateRange={formattedDateRange}
         todayStr={todayStr}
-      />
+      />,
     );
 
     setTimeout(() => {
@@ -445,8 +474,26 @@ export default function GeneralLedger() {
       <PageBreadcrumb pageTitle="General Ledger" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        <div className="flex flex-col sm:flex-row items-end gap-4 mb-8 print:hidden">
-          <div className="w-full sm:w-auto">
+        <div className="flex flex-wrap items-end gap-4 mb-8 print:hidden">
+          <div className="flex-1 min-w-[150px]">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Project
+            </label>
+            <select
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              disabled={loadingProjects}
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
+            >
+              {projects.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               From Date
             </label>
@@ -458,7 +505,7 @@ export default function GeneralLedger() {
             />
           </div>
 
-          <div className="w-full sm:w-auto">
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               To Date
             </label>
@@ -470,22 +517,24 @@ export default function GeneralLedger() {
             />
           </div>
 
-          <button
-            onClick={handleGetLedger}
-            disabled={!fromDate || !toDate || loading}
-            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
-          >
-            {loading ? "Loading..." : "Get GL"}
-          </button>
+          <div className="flex gap-2 flex-1 min-w-[200px]">
+            <button
+              onClick={handleGetLedger}
+              disabled={!fromDate || !toDate || loading}
+              className="flex-1 px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
+            >
+              {loading ? "Loading..." : "Get GL"}
+            </button>
 
-          <button
-            onClick={handlePrint}
-            disabled={!ledgerData}
-            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] ml-auto flex items-center justify-center gap-2"
-          >
-            <FiPrinter />
-            Print Report
-          </button>
+            <button
+              onClick={handlePrint}
+              disabled={!ledgerData}
+              className="flex-1 px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] flex items-center justify-center gap-2"
+            >
+              <FiPrinter />
+              Print Report
+            </button>
+          </div>
         </div>
 
         {loading ? (

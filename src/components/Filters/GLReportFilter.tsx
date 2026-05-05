@@ -70,7 +70,7 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
   return (
     <div className="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 p-5 rounded-xl mb-6 shadow-sm">
       <div className="flex flex-wrap items-end gap-5">
-         <div className="w-full sm:w-48">
+         <div className="flex-1 min-w-[150px]">
           <Label className="mb-2 text-sm">Project</Label>
           <select
             value={formData.project}
@@ -91,7 +91,7 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
             ))}
           </select>
         </div>
-        <div className="w-full sm:w-32">
+        <div className="flex-1 min-w-[120px]">
           <Label className="mb-2 text-sm">Year</Label>
           <Input
             type="text"
@@ -103,7 +103,7 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
             className="w-full h-11"
           />
         </div>
-        <div className="w-full sm:w-32">
+        <div className="flex-1 min-w-[120px]">
           <Label className="mb-2 text-sm">Period</Label>
           <Input
             type="text"
@@ -115,7 +115,7 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
             className="w-full h-11"
           />
         </div>
-        <div className="w-full sm:w-32">
+        <div className="flex-1 min-w-[150px]">
           <Label className="mb-2 text-sm">Level</Label>
           <Select
             options={hlevelOptions}
@@ -123,7 +123,7 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
             placeholder="Select Level"
           />
         </div>
-        <div className="w-full sm:w-40">
+        <div className="flex-1 min-w-[150px]">
           <Label className="mb-2 text-sm">Report Type</Label>
           <Select
             options={rptTypeOptions}

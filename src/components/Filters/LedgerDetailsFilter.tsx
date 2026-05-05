@@ -164,9 +164,9 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
 
   return (
     <div className="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 p-6 rounded-xl mb-6 shadow-sm">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 gap-4 items-end">
+      <div className="flex flex-wrap items-end gap-4">
         {/* Project Picker */}
-        <div className="w-full">
+        <div className="flex-1 min-w-[150px]">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
             Project
           </label>
@@ -187,7 +187,7 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
         </div>
 
         {/* From Date */}
-        <div className="w-full">
+        <div className="flex-1 min-w-[150px]">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
             From Date
           </label>
@@ -200,7 +200,7 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
         </div>
 
         {/* To Date */}
-        <div className="w-full">
+        <div className="flex-1 min-w-[150px]">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
             To Date
           </label>
@@ -213,7 +213,7 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
         </div>
 
         {/* Account */}
-        <div className="w-full">
+        <div className="flex-1 min-w-[150px]">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
             Account
           </label>
@@ -231,7 +231,7 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
         </div>
 
         {/* Sub Account */}
-        <div className="w-full">
+        <div className="flex-1 min-w-[150px]">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
             Sub Account
           </label>
@@ -253,7 +253,7 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
         </div>
 
         {/* Generate Button */}
-        <div className="w-full xl:col-span-1">
+        <div className="flex-1 min-w-[150px]">
           <button
             onClick={onGenerate}
             disabled={isLoading}

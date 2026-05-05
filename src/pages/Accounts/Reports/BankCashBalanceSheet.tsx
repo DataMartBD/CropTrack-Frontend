@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { createRoot } from "react-dom/client";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
@@ -15,6 +15,7 @@ import SearchableSelect from "../../../components/ui/ut/SearchableSelect";
 interface BalanceSheetItem {
   business_id: number;
   business_name: string;
+  xproj?: string;
   xacc: string;
   xdesc: string;
   xsub: string;
@@ -51,6 +52,13 @@ const BankCashTemplate = ({
     (sum, item) => sum + (parseFloat(item.closing_balance) || 0),
     0,
   );
+
+  const groupedData: Record<string, BalanceSheetItem[]> = {};
+  data.forEach((item) => {
+    const proj = item.xproj || "General";
+    if (!groupedData[proj]) groupedData[proj] = [];
+    groupedData[proj].push(item);
+  });
 
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
@@ -102,48 +110,69 @@ const BankCashTemplate = ({
             </tr>
           </thead>
           <tbody>
-            {data.map((item, idx) => (
-              <tr
-                key={idx}
-                className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 print:hover:bg-transparent"
-              >
-                <td className="border-r border-gray-200 p-2 font-mono">
-                  {item.xacc}
-                </td>
-                <td className="border-r border-gray-200 p-2 leading-tight">
-                  {item.xdesc}
-                </td>
-                <td className="border-r border-gray-200 p-2 font-mono">
-                  {item.xsub}
-                </td>
-                <td className="border-r border-gray-200 p-2 leading-tight">
-                  {item.subaccname || "-"}
-                </td>
-                <td className="border-r border-gray-200 p-2 text-right font-mono">
-                  {parseFloat(item.opening_balance).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-                <td className="border-r border-gray-200 p-2 text-right font-mono">
-                  {parseFloat(item.debit_amount).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-                <td className="border-r border-gray-200 p-2 text-right font-mono">
-                  {parseFloat(item.credit_amount).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-                <td className="p-2 text-right font-mono">
-                  {parseFloat(item.closing_balance).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-              </tr>
+            {Object.entries(groupedData).map(([proj, items]) => (
+              <Fragment key={proj}>
+                <tr className="bg-gray-200 font-bold border-b border-black print:bg-transparent">
+                  <td
+                    colSpan={8}
+                    className="p-2 text-left text-[11px] uppercase tracking-wide border-r border-black"
+                  >
+                    Project: {proj}
+                  </td>
+                </tr>
+                {items.map((item, idx) => (
+                  <tr
+                    key={idx}
+                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 print:hover:bg-transparent break-inside-avoid"
+                  >
+                    <td className="border-r border-gray-200 p-2 font-mono">
+                      {item.xacc}
+                    </td>
+                    <td className="border-r border-gray-200 p-2 leading-tight">
+                      {item.xdesc}
+                    </td>
+                    <td className="border-r border-gray-200 p-2 font-mono">
+                      {item.xsub}
+                    </td>
+                    <td className="border-r border-gray-200 p-2 leading-tight">
+                      {item.subaccname || "-"}
+                    </td>
+                    <td className="border-r border-gray-200 p-2 text-right font-mono">
+                      {parseFloat(item.opening_balance).toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}
+                    </td>
+                    <td className="border-r border-gray-200 p-2 text-right font-mono">
+                      {parseFloat(item.debit_amount).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="border-r border-gray-200 p-2 text-right font-mono">
+                      {parseFloat(item.credit_amount).toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}
+                    </td>
+                    <td className="p-2 text-right font-mono">
+                      {parseFloat(item.closing_balance).toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </Fragment>
             ))}
             <tr className="bg-gray-100 font-bold border-t border-black print:bg-transparent">
               <td colSpan={7} className="border-r border-black p-2 text-right">
@@ -181,6 +210,10 @@ export default function BankCashBalanceSheet() {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<BalanceSheetItem[] | null>(null);
 
+  const [project, setProject] = useState<string>("All");
+  const [projects, setProjects] = useState<string[]>(["All"]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAcc, setSelectedAcc] = useState("");
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
@@ -197,6 +230,22 @@ export default function BankCashBalanceSheet() {
       }
     };
     fetchAccounts();
+
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const data = await getData<any[]>("/masterdata/common-codes/list/", {
+          xtype: "Project",
+        });
+        const codes = (data || []).map((p) => p.xcode);
+        setProjects(["All", ...codes]);
+      } catch (err) {
+        console.error("Failed to load projects", err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    fetchProjects();
   }, []);
 
   const accountOptions = useMemo(() => {
@@ -293,6 +342,7 @@ export default function BankCashBalanceSheet() {
       const token = window.localStorage.getItem("jwtToken");
 
       let url = `${apiBase}/accounts/report/bank-cash/?from_date=${from}&to_date=${to}`;
+      if (project !== "All") url += `&xproj=${encodeURIComponent(project)}`;
       if (selectedAcc) url += `&xacc=${selectedAcc}`;
       if (selectedSub) url += `&xsub=${selectedSub}`;
 
@@ -406,8 +456,26 @@ export default function BankCashBalanceSheet() {
       <PageBreadcrumb pageTitle="Ledger Report" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 items-end gap-4 mb-8 pb-32 print:hidden relative z-10">
-          <div className="w-full">
+        <div className="flex flex-wrap items-end gap-4 mb-8 pb-32 print:hidden relative z-10">
+          <div className="flex-1 min-w-[150px]">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Project
+            </label>
+            <select
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              disabled={loadingProjects}
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
+            >
+              {projects.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               From Date
             </label>
@@ -419,7 +487,7 @@ export default function BankCashBalanceSheet() {
             />
           </div>
 
-          <div className="w-full">
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               To Date
             </label>
@@ -431,7 +499,7 @@ export default function BankCashBalanceSheet() {
             />
           </div>
 
-          <div className="w-full">
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Account
             </label>
@@ -448,7 +516,7 @@ export default function BankCashBalanceSheet() {
             />
           </div>
 
-          <div className="w-full">
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               Sub Account
             </label>
@@ -469,13 +537,13 @@ export default function BankCashBalanceSheet() {
             />
           </div>
 
-          <div className="flex gap-2 lg:col-span-1 xl:col-span-2">
+          <div className="flex gap-2 flex-1 min-w-[200px]">
             <button
               onClick={handleGetReport}
               disabled={!fromDate || !toDate || loading}
               className="flex-1 px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
             >
-              {loading ? "Loading..." : "Get Report"}
+              {loading ? "Loading..." : "Get"}
             </button>
 
             <button

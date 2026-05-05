@@ -9,11 +9,18 @@ import { Spinner } from "../../../components/ui/ut/Spinner";
 import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
 import { ReportHeader } from "../../../components/reports/ReportHeader";
+import { getData } from "../../../services/apiClient";
+
+interface ProjectCode {
+  xtype: string;
+  xcode: string;
+}
 
 // ... (interfaces and helper functions remain the same)
 
 interface BalanceSheetItem {
   business_id_id: number;
+  xproj?: string;
   xacctype: string;
   xhrc1: string;
   xdesc: string;
@@ -32,13 +39,18 @@ interface BalanceSheetResponse {
 }
 
 const groupData = (items: BalanceSheetItem[]) => {
-  const groups: Record<string, BalanceSheetItem[]> = {};
+  const groups: Record<string, Record<string, BalanceSheetItem[]>> = {};
   items.forEach((item) => {
-    const key = item.xhrc1 || "Uncategorized";
-    if (!groups[key]) {
-      groups[key] = [];
+    const projKey = item.xproj || "General";
+    const accKey = item.xhrc1 || "Uncategorized";
+    
+    if (!groups[projKey]) {
+      groups[projKey] = {};
     }
-    groups[key].push(item);
+    if (!groups[projKey][accKey]) {
+      groups[projKey][accKey] = [];
+    }
+    groups[projKey][accKey].push(item);
   });
   return groups;
 };
@@ -60,14 +72,14 @@ const BalanceSheetTemplate = ({
   todayStr,
 }: {
   data: BalanceSheetResponse;
-  groupedLiabilities: Record<string, BalanceSheetItem[]>;
-  groupedAssets: Record<string, BalanceSheetItem[]>;
+  groupedLiabilities: Record<string, Record<string, BalanceSheetItem[]>>;
+  groupedAssets: Record<string, Record<string, BalanceSheetItem[]>>;
   formattedDateRange: string;
   todayStr: string;
 }) => {
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      <ReportHeader title="রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪">
+      <ReportHeader title="রাহবার হিমাগার (প্রাঃ) লিমিটেড">
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
           <span className="text-green-800 font-medium">Report Date:</span>{" "}
           {formattedDateRange}
@@ -92,46 +104,71 @@ const BalanceSheetTemplate = ({
             <span>টাকা</span>
           </div>
 
-          {Object.keys(groupedLiabilities).map((groupName) => {
-            const items = groupedLiabilities[groupName];
-            const groupTotal = getGroupTotal(items, "liability");
+          {Object.keys(groupedLiabilities).map((projName) => {
+            const projGroups = groupedLiabilities[projName];
+            const projItems = Object.values(projGroups).flat();
+            const projTotal = getGroupTotal(projItems, "liability");
 
             return (
               <div
-                key={groupName}
-                className="border-b border-black last:border-b-0 break-inside-avoid"
+                key={projName}
+                className="border-b border-black last:border-b-0"
               >
-                <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
-                  <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
-                    {groupName}
+                <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
+                  <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
+                    Project: {projName}
                   </div>
-                </div>
-
-                {items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
-                  >
-                    <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      <div className="text-gray-800">{item.xdesc}</div>
-                    </div>
-                    <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
-                      {item.liability.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
-                  <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
-                    {groupTotal.toLocaleString(undefined, {
+                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
+                    {projTotal.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </div>
                 </div>
+
+                {Object.keys(projGroups).map((groupName) => {
+                  const items = projGroups[groupName];
+                  const groupTotal = getGroupTotal(items, "liability");
+
+                  return (
+                    <div
+                      key={groupName}
+                      className="border-b border-gray-300 last:border-b-0 break-inside-avoid"
+                    >
+                      <div className="flex border-b border-gray-200 bg-gray-50/50 print:bg-transparent">
+                        <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
+                          {groupName}
+                        </div>
+                      </div>
+
+                      {items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex border-b border-gray-100 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
+                        >
+                          <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-100 relative">
+                            <div className="text-gray-800">{item.xdesc}</div>
+                          </div>
+                          <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
+                            {item.liability.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
+                        <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-200 border-dashed">
+                          {groupTotal.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -144,46 +181,71 @@ const BalanceSheetTemplate = ({
             <span>টাকা</span>
           </div>
 
-          {Object.keys(groupedAssets).map((groupName) => {
-            const items = groupedAssets[groupName];
-            const groupTotal = getGroupTotal(items, "asset");
+          {Object.keys(groupedAssets).map((projName) => {
+            const projGroups = groupedAssets[projName];
+            const projItems = Object.values(projGroups).flat();
+            const projTotal = getGroupTotal(projItems, "asset");
 
             return (
               <div
-                key={groupName}
-                className="border-b border-black last:border-b-0 break-inside-avoid"
+                key={projName}
+                className="border-b border-black last:border-b-0"
               >
-                <div className="flex border-b border-gray-300 bg-gray-50/50 print:bg-transparent">
-                  <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
-                    {groupName}
+                <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
+                  <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
+                    Project: {projName}
                   </div>
-                </div>
-
-                {items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex border-b border-gray-200 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
-                  >
-                    <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-200 relative">
-                      <div className="text-gray-800">{item.xdesc}</div>
-                    </div>
-                    <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
-                      {item.asset.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
-                  <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-300 border-dashed">
-                    {groupTotal.toLocaleString(undefined, {
+                  <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
+                    {projTotal.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </div>
                 </div>
+
+                {Object.keys(projGroups).map((groupName) => {
+                  const items = projGroups[groupName];
+                  const groupTotal = getGroupTotal(items, "asset");
+
+                  return (
+                    <div
+                      key={groupName}
+                      className="border-b border-gray-300 last:border-b-0 break-inside-avoid"
+                    >
+                      <div className="flex border-b border-gray-200 bg-gray-50/50 print:bg-transparent">
+                        <div className="flex-1 px-2 py-1 font-semibold text-xs uppercase tracking-wide">
+                          {groupName}
+                        </div>
+                      </div>
+
+                      {items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex border-b border-gray-100 last:border-b-0 text-xs hover:bg-gray-50 print:hover:bg-transparent"
+                        >
+                          <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-100 relative">
+                            <div className="text-gray-800">{item.xdesc}</div>
+                          </div>
+                          <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
+                            {item.asset.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="flex justify-end bg-gray-50 print:bg-transparent py-1">
+                        <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-200 border-dashed">
+                          {groupTotal.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -236,8 +298,30 @@ export default function BalanceSheet() {
   const [toDate, setToDate] = useState<Date | null>(
     initialTo ? new Date(initialTo) : new Date(),
   );
+  const [project, setProject] = useState<string>("All");
+  const [projects, setProjects] = useState<string[]>(["All"]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<BalanceSheetResponse | null>(null);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const result = await getData<ProjectCode[]>(
+          "/masterdata/common-codes/list/",
+          { xtype: "Project" },
+        );
+        const codes = (result || []).map((p) => p.xcode);
+        setProjects(["All", ...codes]);
+      } catch (err) {
+        console.error("Failed to load projects", err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const handleFetchReport = async () => {
     if (!fromDate || !toDate) return;
@@ -256,14 +340,16 @@ export default function BalanceSheet() {
       const apiBase = import.meta.env.VITE_API_BASE_URL;
       const token = window.localStorage.getItem("jwtToken");
 
-      const response = await axios.get(
-        `${apiBase}/accounts/report/balance-sheet/?from_date=${from}&to_date=${to}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      let url = `${apiBase}/accounts/report/balance-sheet/?from_date=${from}&to_date=${to}`;
+      if (project !== "All") {
+        url += `&xproj=${encodeURIComponent(project)}`;
+      }
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (response.data) {
         setData(response.data as BalanceSheetResponse);
@@ -379,8 +465,26 @@ export default function BalanceSheet() {
       <PageBreadcrumb pageTitle="Balance Sheet" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        <div className="flex flex-col sm:flex-row items-end gap-4 mb-8 print:hidden">
-          <div className="w-full sm:w-auto">
+        <div className="flex flex-wrap items-end gap-4 mb-8 print:hidden">
+          <div className="flex-1 min-w-[150px]">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Project
+            </label>
+            <select
+              value={project}
+              onChange={(e) => setProject(e.target.value)}
+              disabled={loadingProjects}
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
+            >
+              {projects.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               From Date
             </label>
@@ -392,7 +496,7 @@ export default function BalanceSheet() {
             />
           </div>
 
-          <div className="w-full sm:w-auto">
+          <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
               To Date
             </label>
@@ -404,22 +508,24 @@ export default function BalanceSheet() {
             />
           </div>
 
-          <button
-            onClick={handleFetchReport}
-            disabled={!fromDate || !toDate || loading}
-            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
-          >
-            {loading ? "Loading..." : "Get Report"}
-          </button>
+          <div className="flex gap-2 flex-1 min-w-[200px]">
+            <button
+              onClick={handleFetchReport}
+              disabled={!fromDate || !toDate || loading}
+              className="flex-1 px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
+            >
+              {loading ? "Loading..." : "Get Report"}
+            </button>
 
-          <button
-            onClick={handlePrint}
-            disabled={!data}
-            className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] ml-auto flex items-center justify-center gap-2"
-          >
-            <FiPrinter />
-            Print Report
-          </button>
+            <button
+              onClick={handlePrint}
+              disabled={!data}
+              className="flex-1 px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] flex items-center justify-center gap-2"
+            >
+              <FiPrinter />
+              Print Report
+            </button>
+          </div>
         </div>
 
         {loading ? (
