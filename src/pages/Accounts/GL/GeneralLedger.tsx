@@ -162,7 +162,7 @@ const GeneralLedgerTemplate = ({
                         >
                           <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-100 relative">
                             <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
-                              <span>{item.xdate}</span>
+                              {/* <span>{item.xdate}</span> */}
                               {item.subaccname && (
                                 <div className="text-[10px] text-gray-600">
                                   {item.subaccname}
@@ -238,7 +238,7 @@ const GeneralLedgerTemplate = ({
                         >
                           <div className="flex-1 px-2 py-1 pl-4 border-r border-gray-100 relative">
                             <div className="flex justify-between items-center text-[10px] text-gray-700 mb-0.5">
-                              <span>{item.xdate}</span>
+                              {/* <span>{item.xdate}</span> */}
                               {item.subaccname && (
                                 <div className="text-[10px] text-gray-600">
                                   {item.subaccname}
