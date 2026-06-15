@@ -46,13 +46,13 @@ interface LedgerResponse {
   message: string;
 }
 
+const formatAmount = (value: number) => Math.abs(value).toLocaleString();
+
 const groupData = (items: LedgerItem[]) => {
   const groups: Record<string, Record<string, LedgerItem[]>> = {};
   items.forEach((item) => {
     const projKey = item.xproj || "General";
-    const accKey = item.xacc
-      ? `${item.xacc} - ${item.xdesc}`
-      : item.xdesc || "Uncategorized";
+    const accKey = item.xdesc || "Uncategorized";
     if (!groups[projKey]) {
       groups[projKey] = {};
     }
@@ -136,7 +136,7 @@ const GeneralLedgerTemplate = ({
                     Project: {projName}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
-                    {projTotal.toLocaleString()}
+                    {formatAmount(projTotal)}
                   </div>
                 </div>
 
@@ -172,14 +172,14 @@ const GeneralLedgerTemplate = ({
                             <div className="text-gray-800">{item.xnote}</div>
                           </div>
                           <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
-                            {parseFloat(item.deposit).toLocaleString()}
+                            {formatAmount(parseFloat(item.deposit) || 0)}
                           </div>
                         </div>
                       ))}
 
                       <div className="flex justify-end bg-gray-50 print:bg-transparent py-0.5">
                         <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-200 border-dashed">
-                          {accTotal.toLocaleString()}
+                          {formatAmount(accTotal)}
                         </div>
                       </div>
                     </div>
@@ -211,7 +211,7 @@ const GeneralLedgerTemplate = ({
                     Project: {projName}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
-                    {projTotal.toLocaleString()}
+                    {formatAmount(projTotal)}
                   </div>
                 </div>
 
@@ -248,14 +248,14 @@ const GeneralLedgerTemplate = ({
                             <div className="text-gray-800">{item.xnote}</div>
                           </div>
                           <div className="w-24 sm:w-32 px-2 py-1 text-right font-mono flex items-end justify-end pb-1">
-                            {parseFloat(item.expense).toLocaleString()}
+                            {formatAmount(parseFloat(item.expense) || 0)}
                           </div>
                         </div>
                       ))}
 
                       <div className="flex justify-end bg-gray-50 print:bg-transparent py-0.5">
                         <div className="px-2 text-xs font-bold w-24 sm:w-32 text-right border-t border-gray-200 border-dashed">
-                          {accTotal.toLocaleString()}
+                          {formatAmount(accTotal)}
                         </div>
                       </div>
                     </div>
@@ -270,11 +270,11 @@ const GeneralLedgerTemplate = ({
       <div className="grid grid-cols-2 border border-t-0 border-black font-bold text-sm bg-gray-100 print:bg-transparent">
         <div className="border-r border-black p-2 flex justify-between">
           <span>Total Deposit/মোট জমা</span>
-          <span>{ledgerData.summary.total_deposit.toLocaleString()}</span>
+          <span>{formatAmount(ledgerData.summary.total_deposit)}</span>
         </div>
         <div className="p-2 flex justify-between">
           <span>Total Expense/মোট খরচ</span>
-          <span>{ledgerData.summary.total_expense.toLocaleString()}</span>
+          <span>{formatAmount(ledgerData.summary.total_expense)}</span>
         </div>
       </div>
 
