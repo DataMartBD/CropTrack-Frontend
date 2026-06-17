@@ -95,5 +95,9 @@
   "trial_balance": "Trial Balance",
   "balance_sheet": "Balance Sheet",
   "income_statement": "Income Statement",
-  "ledger_details": "Ledger Details"
+  "ledger_details": "Ledger Details",
+  "project": "Project",
+  "shareholders": "Shareholders",
+  "shareholder_list": "Shareholder List",
+  "shareholder_pl": "Shareholder P/L"
 }

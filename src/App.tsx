@@ -43,6 +43,8 @@ import CodeManual from "./pages/Reports/CodeManual";
 import LedgerDetails from "./pages/Reports/LedgerDetails";
 import BalanceSheetCrystal from "./pages/Reports/BalanceSheetCrystal";
 import IncomeStatementCrystal from "./pages/Reports/IncomeStatementCrystal";
+import ShareholderList from "./pages/Accounts/Shareholder/ShareholderList";
+import ShareholderPL from "./pages/Accounts/Shareholder/ShareholderPL";
 
 export default function App() {
   return (
@@ -123,6 +125,11 @@ export default function App() {
               />
               <Route path="/reports/code-manual" element={<CodeManual />} />
               <Route path="/reports/gl-ledger" element={<LedgerDetails />} />
+              <Route
+                path="/shareholders/list"
+                element={<ShareholderList />}
+              />
+              <Route path="/shareholders/pl" element={<ShareholderPL />} />
             </Route>
           </Route>
 

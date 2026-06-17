@@ -18,6 +18,7 @@ import {
   FcDataSheet,
   FcDocument,
   FcNeutralTrading,
+  FcTreeStructure 
 } from "react-icons/fc";
 
 import { useSidebar } from "../context/SidebarContext";
@@ -218,6 +219,22 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         name: t("code_manual"),
         icon: <FcDataSheet />,
         path: "/reports/code-manual",
+      },
+    ],
+  },
+  {
+    name: t("shareholders"),
+    icon: <FcTreeStructure  />,
+    subItems: [
+      {
+        name: t("shareholder_list"),
+        icon: <FcPackage />,
+        path: "/shareholders/list",
+      },
+      {
+        name: t("shareholder_pl"),
+        icon: <FcPackage />,
+        path: "/shareholders/pl",
       },
     ],
   },
