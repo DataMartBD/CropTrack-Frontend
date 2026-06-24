@@ -30,6 +30,7 @@ interface JournalVoucherData {
     xsub: string;
     xprime: string | number;
     xlong: string;
+    xqty?: string | number | null;
     xproj: string;
   }[];
 }
@@ -168,8 +169,17 @@ const JournalVoucherTemplate = ({
                         Project: {row.xproj}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 text-gray-600 max-w-xs truncate print:whitespace-normal print:overflow-visible">
-                      {row.xlong}
+                    <td className="px-2 py-1.5 text-gray-600 max-w-xs print:whitespace-normal print:overflow-visible">
+                      <div className="truncate print:whitespace-normal print:overflow-visible">
+                        {row.xlong}
+                      </div>
+                      {row.xqty !== null &&
+                        row.xqty !== undefined &&
+                        String(row.xqty).trim() !== "" && (
+                          <div className="text-[10px] text-gray-500">
+                            Qty: {row.xqty}
+                          </div>
+                        )}
                     </td>
                     <td className="px-2 py-1.5 text-right text-gray-700">
                       {debit > 0 ? debit.toFixed(2) : "-"}

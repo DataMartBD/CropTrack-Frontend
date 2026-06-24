@@ -60,6 +60,7 @@ interface JournalDetail {
   xproj: string;
   xprime: number;
   xlong: string;
+  xqty: string;
   debit: string;
   credit: string;
   accountName: string;
@@ -102,6 +103,7 @@ export default function JournalVoucherEntry() {
       xproj: "",
       xprime: 0,
       xlong: "",
+      xqty: "",
       debit: "",
       credit: "",
       accountName: "",
@@ -161,6 +163,7 @@ export default function JournalVoucherEntry() {
         xproj: "",
         xprime: 0,
         xlong: "",
+        xqty: "",
         debit: "",
         credit: "",
         accountName: "",
@@ -335,6 +338,7 @@ export default function JournalVoucherEntry() {
           xproj: d.xproj,
           xprime: d.xprime,
           xbase: d.xprime,
+          xqty: d.xqty.trim() === "" ? null : parseFloat(d.xqty) || 0,
           xlong: d.xlong || header.xlong,
         })),
       };
@@ -486,7 +490,7 @@ export default function JournalVoucherEntry() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-900/60 text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 <th className="px-3 py-2.5 font-semibold w-10 text-center">#</th>
@@ -500,6 +504,9 @@ export default function JournalVoucherEntry() {
                   Sub / Customer 
                 </th>
                 <th className="px-3 py-2.5 font-semibold w-48">Description</th>
+                <th className="px-3 py-2.5 font-semibold w-28 text-right">
+                  Qty
+                </th>
                 <th className="px-3 py-2.5 font-semibold w-32 text-right">
                   Debit
                 </th>
@@ -602,6 +609,18 @@ export default function JournalVoucherEntry() {
                   <td className="px-3 py-2">
                     <input
                       type="number"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-right font-mono text-sm focus:border-brand-500 focus:ring-0 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                      value={row.xqty}
+                      onChange={(e) =>
+                        handleDetailChange(row.id, "xqty", e.target.value)
+                      }
+                      placeholder="0"
+                    />
+                  </td>
+
+                  <td className="px-3 py-2">
+                    <input
+                      type="number"
                       className={`w-full rounded-lg border bg-white px-3 py-2 text-right font-mono text-sm focus:border-brand-500 focus:ring-0 dark:bg-gray-900 dark:text-gray-200 ${
                         triedSubmit && row.xprime === 0
                           ? "border-red-500"
@@ -648,7 +667,7 @@ export default function JournalVoucherEntry() {
             </tbody>
             <tfoot className="bg-gray-50 dark:bg-gray-900/40 font-semibold text-gray-900 dark:text-gray-100">
               <tr>
-                <td colSpan={5} className="px-3 py-3 text-right">
+                <td colSpan={6} className="px-3 py-3 text-right">
                   Totals:
                 </td>
                 <td className="px-3 py-3 text-right font-mono">
@@ -661,7 +680,7 @@ export default function JournalVoucherEntry() {
               </tr>
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-3 py-2 text-right text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"
                 >
                   Difference:

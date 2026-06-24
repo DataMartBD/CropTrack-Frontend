@@ -2,6 +2,7 @@ import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
 import { getData } from "../../../services/apiClient";
 
 interface ProjectCode {
@@ -75,6 +76,14 @@ export default function ShareholderPL() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [page, setPage] = useState(1);
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [hasTransferred, setHasTransferred] = useState(false);
+  // The Year/Period/Project that produced the currently displayed report
+  const [fetchedParams, setFetchedParams] = useState<{
+    year: string;
+    month: string;
+    project: string;
+  } | null>(null);
 
   // Project options (with Central Account pinned first)
   useEffect(() => {
@@ -99,6 +108,7 @@ export default function ShareholderPL() {
 
   const fetchReport = async () => {
     setIsLoading(true);
+    setHasTransferred(false);
     try {
       const params: Record<string, string> = {
         xyear: year,
@@ -116,13 +126,55 @@ export default function ShareholderPL() {
       setMeta(response.data?.meta || null);
       setPage(1);
       setHasFetched(true);
+      setFetchedParams({ year, month, project });
     } catch (error) {
       console.error("Error fetching shareholder P/L:", error);
       setRows([]);
       setMeta(null);
       setHasFetched(true);
+      setFetchedParams({ year, month, project });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Transfer is allowed only after a report has been fetched for a specific
+  // project (not "All").
+  const canTransfer =
+    !!fetchedParams &&
+    fetchedParams.project !== "All" &&
+    rows.length > 0 &&
+    !hasTransferred;
+
+  const handleTransfer = async () => {
+    if (!fetchedParams || fetchedParams.project === "All") return;
+
+    const { year: tYear, month: tMonth, project: tProject } = fetchedParams;
+    const xper = tMonth.padStart(2, "0");
+
+    setIsTransferring(true);
+    try {
+      const response = await axios.post(
+        `/accounts/Shareholder/post/${tYear}/${xper}/${tProject}/`,
+        null,
+        { params: { xyear: tYear, xper, Project: tProject } },
+      );
+
+      const voucher = response.data?.data?.voucher_info;
+      toast.success(
+        voucher?.voucher_number
+          ? `${response.data?.message || "Posted successfully"} (${voucher.voucher_number})`
+          : response.data?.message || "Shareholder P/L posted successfully",
+      );
+      setHasTransferred(true);
+    } catch (error) {
+      let message = "Failed to transfer Shareholder P/L";
+      if (axios.isAxiosError(error)) {
+        message = error.response?.data?.message || message;
+      }
+      toast.error(message);
+    } finally {
+      setIsTransferring(false);
     }
   };
 
@@ -135,6 +187,14 @@ export default function ShareholderPL() {
 
   return (
     <div>
+      <Toaster
+        position="top-right"
+        containerStyle={{ top: 80 }}
+        toastOptions={{
+          duration: 4000,
+          error: { duration: 6000 },
+        }}
+      />
       <PageMeta
         title="Shareholder P/L - CropTrack"
         description="Shareholder Profit & Loss - CropTrack"
@@ -197,6 +257,23 @@ export default function ShareholderPL() {
               className="w-full px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
             >
               {isLoading ? "Loading..." : "Get"}
+            </button>
+          </div>
+
+          <div className="flex-1 min-w-[140px]">
+            <button
+              onClick={handleTransfer}
+              disabled={!canTransfer || isLoading || isTransferring}
+              title={
+                hasTransferred
+                  ? "Already transferred. Run Get again to transfer another period."
+                  : !canTransfer
+                    ? "Run Get for a specific project (not All) to enable transfer"
+                    : undefined
+              }
+              className="w-full px-6 py-2 text-sm font-medium text-white bg-[#1D4ED8] hover:bg-[#1E40AF] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
+            >
+              {isTransferring ? "Transferring..." : "Transfer to GL"}
             </button>
           </div>
         </div>
