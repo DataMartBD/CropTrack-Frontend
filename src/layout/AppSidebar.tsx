@@ -189,6 +189,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcDataSheet />,
         path: "/accounts/report/balance-sheet",
       },
+      {
+        name: t("day_wise_income"),
+        icon: <FcNeutralTrading />,
+        path: "/accounts/report/day-wise-income",
+      },
     ],
   },
   {

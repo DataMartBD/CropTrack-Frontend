@@ -38,6 +38,7 @@ import GeneralLedger from "./pages/Accounts/GL/GeneralLedger";
 import BalanceSheet from "./pages/Accounts/GL/BalanceSheet";
 import BankCashBalanceSheet from "./pages/Accounts/Reports/BankCashBalanceSheet";
 import LoanReports from "./pages/Accounts/Reports/LoanReports";
+import DayWiseIncome from "./pages/Accounts/Reports/DayWiseIncome";
 import TrialBalance from "./pages/Reports/TrialBalance";
 import CodeManual from "./pages/Reports/CodeManual";
 import LedgerDetails from "./pages/Reports/LedgerDetails";
@@ -112,6 +113,10 @@ export default function App() {
               <Route
                 path="/accounts/report/balance-sheet"
                 element={<BalanceSheet />}
+              />
+              <Route
+                path="/accounts/report/day-wise-income"
+                element={<DayWiseIncome />}
               />
 
               <Route path="/reports/trial-balance" element={<TrialBalance />} />
