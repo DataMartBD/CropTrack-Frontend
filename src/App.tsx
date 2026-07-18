@@ -46,6 +46,7 @@ import BalanceSheetCrystal from "./pages/Reports/BalanceSheetCrystal";
 import IncomeStatementCrystal from "./pages/Reports/IncomeStatementCrystal";
 import ShareholderList from "./pages/Accounts/Shareholder/ShareholderList";
 import ShareholderPL from "./pages/Accounts/Shareholder/ShareholderPL";
+import ShareholderSummary from "./pages/Accounts/Shareholder/ShareholderSummary";
 
 export default function App() {
   return (
@@ -135,6 +136,10 @@ export default function App() {
                 element={<ShareholderList />}
               />
               <Route path="/shareholders/pl" element={<ShareholderPL />} />
+              <Route
+                path="/shareholders/summary"
+                element={<ShareholderSummary />}
+              />
             </Route>
           </Route>
 

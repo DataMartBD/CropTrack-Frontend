@@ -241,6 +241,11 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         icon: <FcPackage />,
         path: "/shareholders/pl",
       },
+      {
+        name: t("shareholder_summary"),
+        icon: <FcPackage />,
+        path: "/shareholders/summary",
+      },
     ],
   },
 ];

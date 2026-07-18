@@ -6,6 +6,7 @@ import { getData } from "../../../services/apiClient";
 
 interface ShareholderModel {
   pk: string;
+  xrow: number;
   heir_name: string;
   xrelation: string;
   xproj: string;
@@ -21,6 +22,7 @@ interface ShareholderModel {
 }
 
 interface HeirRow {
+  xrow: number;
   heir_name: string;
   xrelation: string;
   // percentage per project key
@@ -66,6 +68,7 @@ export default function ShareholderList() {
       let row = map.get(key);
       if (!row) {
         row = {
+          xrow: s.xrow,
           heir_name: key,
           xrelation: s.xrelation || "",
           percentages: {},
@@ -75,9 +78,12 @@ export default function ShareholderList() {
       const pct = parseFloat(s.xpercentage) || 0;
       row.percentages[s.xproj] = (row.percentages[s.xproj] || 0) + pct;
       if (!row.xrelation && s.xrelation) row.xrelation = s.xrelation;
+      // A heir spans several records (one per project); order by the earliest.
+      if (s.xrow != null && (row.xrow == null || s.xrow < row.xrow))
+        row.xrow = s.xrow;
     });
 
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) => a.xrow - b.xrow);
   }, [shareholders]);
 
   // Name search (frontend)
@@ -193,6 +199,9 @@ export default function ShareholderList() {
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-blue-200 bg-blue-50 dark:border-blue-900/40 dark:bg-blue-900/20">
+                  <th className="w-14 px-6 py-3 text-left text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
+                    #
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
                     👤 Heir Name
                   </th>
@@ -220,7 +229,7 @@ export default function ShareholderList() {
                 {filteredRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={projects.length + 2}
+                      colSpan={projects.length + 3}
                       className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
                     >
                       No shareholders found.
@@ -236,6 +245,9 @@ export default function ShareholderList() {
                           : "bg-gray-50/70 dark:bg-white/[0.02]"
                       }`}
                     >
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        {idx + 1}
+                      </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-800 dark:text-gray-300">
                         {row.heir_name}
                       </td>
@@ -266,7 +278,7 @@ export default function ShareholderList() {
                 <tfoot>
                   <tr className="border-t-2 border-blue-300 bg-blue-100 font-bold dark:border-blue-700 dark:bg-blue-900/30">
                     <td
-                      colSpan={2}
+                      colSpan={3}
                       className="px-6 py-3 text-sm uppercase tracking-wide text-blue-800 dark:text-blue-200"
                     >
                       Total
