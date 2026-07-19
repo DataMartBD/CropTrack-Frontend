@@ -26,7 +26,7 @@ export default function Home() {
         className="bg-[#1D2939] text-white rounded-lg bg-no-repeat bg-right-bottom bg-contain py-3"
         style={{ backgroundImage: `url(${Farm})` }}
       >
-        <div className="container mx-auto flex flex-col md:flex-row items-center my-6 md:my-12">
+        <div className="w-full flex flex-col md:flex-row items-center my-6 md:my-12">
           <div className="flex flex-col w-full lg:w-1/3 justify-center items-start p-4">
             <h1 className="text-4xl md:text-4xl  font-semibold p-1 text-[#F0DA78] tracking-loose">
               CropTrack
@@ -39,7 +39,7 @@ export default function Home() {
       </section>
 
       {/* Grid container for 3 separate sections */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8 container mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8 w-full">
 
            {/* JV */}
         <section

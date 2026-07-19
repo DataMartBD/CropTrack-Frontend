@@ -1,6 +1,8 @@
 {
   "welcome": "Welcome to CropTrack",
   "rahbar": "Rahbar Cold Storage",
+  "menu": "Menu",
+  "close": "Close",
   "dashboard": "Dashboard",
   "logout": "Logout",
   "booking": "Booking",

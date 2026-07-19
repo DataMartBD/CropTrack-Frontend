@@ -1,10 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { useTranslation } from 'react-i18next';
-import { Link } from "react-router";
-import { useSidebar } from "../context/SidebarContext";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 // import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
+
+import rahbarLogo from "../assets/rahbar-logo-seal.png";
+import { ChevronDownIcon, CloseIcon } from "../icons";
+import {
+  NAV_MODULES,
+  findActiveModuleKey,
+  isPathActive,
+  type NavModule,
+} from "./navigation";
 
 // const api = {
 //   base: import.meta.env.VITE_API_BASE_URL,
@@ -12,139 +20,163 @@ import UserDropdown from "../components/header/UserDropdown";
 // }
 
 const AppHeader: React.FC = () => {
-  // const [logoImg, setLogoImg] = useState<string | null>(null);
-  const { i18n } = useTranslation();
-  // useEffect(() => {
-  //   const logo = window.localStorage.getItem("i_logo") || "";
-  //   setLogoImg(logo);
-  // }, [])
+  const { t, i18n } = useTranslation();
+  const location = useLocation();
+
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
-  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const activeModuleKey = findActiveModuleKey(location.pathname);
+  const openModule = NAV_MODULES.find((m) => m.key === openKey) ?? null;
 
-  const handleToggle = () => {
-    if (window.innerWidth >= 991) {
-      toggleSidebar();
-    } else {
-      toggleMobileSidebar();
-    }
-  };
+  const closePanel = useCallback(() => setOpenKey(null), []);
 
   const toggleApplicationMenu = () => {
-    setApplicationMenuOpen(!isApplicationMenuOpen);
+    setApplicationMenuOpen((prev) => !prev);
   };
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  // A completed navigation always dismisses the module panel and the mobile menu.
+  useEffect(() => {
+    setOpenKey(null);
+    setApplicationMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
+    if (!openKey) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        inputRef.current?.focus();
-      }
+      if (event.key === "Escape") closePanel();
+    };
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) closePanel();
     };
 
     document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handlePointerDown);
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handlePointerDown);
     };
-  }, []);
+  }, [openKey, closePanel]);
+
+  const moduleClasses = (module: NavModule) => {
+    const isCurrent = activeModuleKey === module.key;
+    const isOpen = openKey === module.key;
+
+    const base =
+      "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13725A]";
+
+    if (isCurrent || isOpen) {
+      return `${base} bg-[#13725A]/10 text-[#13725A] dark:bg-[#3BB68F]/15 dark:text-[#3BB68F]`;
+    }
+
+    return `${base} text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white`;
+  };
 
   return (
-    <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 lg:border-b">
-      <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
-        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
-          <button
-            className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999 dark:border-gray-800 lg:flex dark:text-gray-400 lg:h-11 lg:w-11 lg:border"
-            onClick={handleToggle}
-            aria-label="Toggle Sidebar"
-          >
-            {isMobileOpen ? (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-99999 w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+    >
+      {/* Single row on desktop: modules | controls.
+          Below lg the controls wrap onto their own line when toggled open. */}
+      <div className="flex w-full flex-wrap items-center gap-x-3 px-3 lg:px-6">
+        {/* The seal's ring is dark navy, so it needs a white disc behind it to stay
+            legible on the dark-mode header. On the white light-mode header it is invisible. */}
+        <Link to="/" className="order-1 shrink-0 py-2" aria-label={t("rahbar")}>
+          <img
+            src={rahbarLogo}
+            alt={t("rahbar")}
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-full bg-white object-contain"
+          />
+        </Link>
+
+        {/* Reveals the language / theme / user controls below lg. */}
+        <button
+          onClick={toggleApplicationMenu}
+          aria-expanded={isApplicationMenuOpen}
+          aria-label={t("menu")}
+          className="order-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M5.99902 10.4951C6.82745 10.4951 7.49902 11.1667 7.49902 11.9951V12.0051C7.49902 12.8335 6.82745 13.5051 5.99902 13.5051C5.1706 13.5051 4.49902 12.8335 4.49902 12.0051V11.9951C4.49902 11.1667 5.1706 10.4951 5.99902 10.4951ZM17.999 10.4951C18.8275 10.4951 19.499 11.1667 19.499 11.9951V12.0051C19.499 12.8335 18.8275 13.5051 17.999 13.5051C17.1706 13.5051 16.499 12.8335 16.499 12.0051V11.9951C16.499 11.1667 17.1706 10.4951 17.999 10.4951ZM13.499 11.9951C13.499 11.1667 12.8275 10.4951 11.999 10.4951C11.1706 10.4951 10.499 11.1667 10.499 11.9951V12.0051C10.499 12.8335 11.1706 13.5051 11.999 13.5051C12.8275 13.5051 13.499 12.8335 13.499 12.0051V11.9951Z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
+
+        {/* Modules — always the leading element; scrolls horizontally when they overflow. */}
+        <nav
+          aria-label={t("menu")}
+          // min-w-0 lets the nav shrink inside the flex row so overflow-x-auto can actually scroll.
+          className="order-2 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto py-2 no-scrollbar"
+        >
+          {NAV_MODULES.map((module) => {
+            const isOpen = openKey === module.key;
+
+            if (module.path) {
+              return (
+                <Link
+                  key={module.key}
+                  to={module.path}
+                  onClick={closePanel}
+                  className={moduleClasses(module)}
+                >
+                  <span className="text-lg">
+                    <module.Icon />
+                  </span>
+                  <span>{t(module.labelKey)}</span>
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={module.key}
+                type="button"
+                onClick={() => setOpenKey(isOpen ? null : module.key)}
+                aria-expanded={isOpen}
+                // Only reference the panel while it exists in the DOM.
+                aria-controls={isOpen ? `nav-panel-${module.key}` : undefined}
+                className={`${moduleClasses(module)} cursor-pointer`}
               >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
-                  fill="currentColor"
+                <span className="text-lg">
+                  <module.Icon />
+                </span>
+                <span>{t(module.labelKey)}</span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    isOpen ? "rotate-180" : ""
+                  }`}
                 />
-              </svg>
-            ) : (
-              <svg
-                width="16"
-                height="12"
-                viewBox="0 0 16 12"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M0.583252 1C0.583252 0.585788 0.919038 0.25 1.33325 0.25H14.6666C15.0808 0.25 15.4166 0.585786 15.4166 1C15.4166 1.41421 15.0808 1.75 14.6666 1.75L1.33325 1.75C0.919038 1.75 0.583252 1.41422 0.583252 1ZM0.583252 11C0.583252 10.5858 0.919038 10.25 1.33325 10.25L14.6666 10.25C15.0808 10.25 15.4166 10.5858 15.4166 11C15.4166 11.4142 15.0808 11.75 14.6666 11.75L1.33325 11.75C0.919038 11.75 0.583252 11.4142 0.583252 11ZM1.33325 5.25C0.919038 5.25 0.583252 5.58579 0.583252 6C0.583252 6.41421 0.919038 6.75 1.33325 6.75L7.99992 6.75C8.41413 6.75 8.74992 6.41421 8.74992 6C8.74992 5.58579 8.41413 5.25 7.99992 5.25L1.33325 5.25Z"
-                  fill="currentColor"
-                />
-              </svg>
-            )}
-            {/* Cross Icon */}
-          </button>
+              </button>
+            );
+          })}
+        </nav>
 
-          <Link to="/" className="lg:hidden">
-
-            <svg className="dark:hidden" width="240" height="60" viewBox="0 0 240 60" xmlns="http://www.w3.org/2000/svg">
-              <text x="10" y="42" font-family="Segoe UI, Roboto, sans-serif" font-size="36" font-weight="bold">
-                <tspan fill="#1D2939">🥔Crop</tspan>
-                <tspan fill="#4299e1">Track</tspan>
-              </text>
-            </svg>
-
-
-            <svg className="hidden dark:block" width="240" height="60" viewBox="0 0 240 60" xmlns="http://www.w3.org/2000/svg">
-              <text x="10" y="42" font-family="Segoe UI, Roboto, sans-serif" font-size="36" font-weight="bold">
-                <tspan fill="#ffffff">🥔Crop</tspan>
-                <tspan fill="#4299e1">Track</tspan>
-              </text>
-            </svg>
-          </Link>
-
-          <button
-            onClick={toggleApplicationMenu}
-            className="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M5.99902 10.4951C6.82745 10.4951 7.49902 11.1667 7.49902 11.9951V12.0051C7.49902 12.8335 6.82745 13.5051 5.99902 13.5051C5.1706 13.5051 4.49902 12.8335 4.49902 12.0051V11.9951C4.49902 11.1667 5.1706 10.4951 5.99902 10.4951ZM17.999 10.4951C18.8275 10.4951 19.499 11.1667 19.499 11.9951V12.0051C19.499 12.8335 18.8275 13.5051 17.999 13.5051C17.1706 13.5051 16.499 12.8335 16.499 12.0051V11.9951C16.499 11.1667 17.1706 10.4951 17.999 10.4951ZM13.499 11.9951C13.499 11.1667 12.8275 10.4951 11.999 10.4951C11.1706 10.4951 10.499 11.1667 10.499 11.9951V12.0051C10.499 12.8335 11.1706 13.5051 11.999 13.5051C12.8275 13.5051 13.499 12.8335 13.499 12.0051V11.9951Z"
-                fill="currentColor"
-              />
-            </svg>
-          </button>
-
-
-        </div>
+        {/* z-50 keeps the user dropdown above the module panel (z-40). */}
         <div
-          className={`${isApplicationMenuOpen ? "flex" : "hidden"
-            } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
+          className={`${
+            isApplicationMenuOpen ? "flex" : "hidden"
+          } relative z-50 order-4 w-full shrink-0 items-center justify-between gap-4 border-t border-gray-200 py-3 shadow-theme-md lg:flex lg:w-auto lg:justify-end lg:border-t-0 lg:py-0 lg:shadow-none dark:border-gray-800`}
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
             {/* <!-- Language Toggle --> */}
             <button
-              onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'bn' : 'en')}
-              className="px-4 py-2 bg-[#13725A] text-white rounded-full hover:bg-[#13503E]"
+              onClick={() =>
+                i18n.changeLanguage(i18n.language === "en" ? "bn" : "en")
+              }
+              className="rounded-full bg-[#13725A] px-4 py-2 text-white hover:bg-[#13503E]"
             >
-              {i18n.language === 'en' ? 'English' : 'বাংলা'}
+              {i18n.language === "en" ? "English" : "বাংলা"}
             </button>
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
@@ -155,6 +187,56 @@ const AppHeader: React.FC = () => {
           <UserDropdown />
         </div>
       </div>
+
+      {openModule?.children && (
+        <div
+          id={`nav-panel-${openModule.key}`}
+          className="absolute inset-x-0 top-full z-40 border-b border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900"
+        >
+          <div className="w-full px-4 py-5 lg:px-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                {t(openModule.labelKey)}
+              </h2>
+              <button
+                type="button"
+                onClick={closePanel}
+                aria-label={t("close")}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              >
+                <CloseIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {openModule.children.map((leaf) => {
+                const isCurrent = isPathActive(location.pathname, leaf.path);
+
+                return (
+                  <Link
+                    key={leaf.path}
+                    to={leaf.path}
+                    onClick={closePanel}
+                    aria-current={isCurrent ? "page" : undefined}
+                    className={`flex items-center gap-3 rounded-xl border p-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#13725A] ${
+                      isCurrent
+                        ? "border-[#13725A] bg-[#13725A]/8 dark:border-[#3BB68F] dark:bg-[#3BB68F]/10"
+                        : "border-gray-200 hover:border-[#13725A] hover:bg-gray-50 dark:border-gray-700 dark:hover:border-[#3BB68F] dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gray-100 text-2xl dark:bg-gray-800">
+                      <leaf.Icon />
+                    </span>
+                    <span className="text-sm leading-snug font-medium text-gray-800 dark:text-gray-100">
+                      {t(leaf.labelKey)}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

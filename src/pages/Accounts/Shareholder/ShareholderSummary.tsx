@@ -242,13 +242,13 @@ export default function ShareholderSummary() {
                     Expense
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
-                    Closing Balance
+                    Payable
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
                     Receivable
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
-                    Payable
+                    Closing Balance
                   </th>
                 </tr>
               </thead>
@@ -289,16 +289,16 @@ export default function ShareholderSummary() {
                       <td className="px-6 py-4 text-right text-sm text-gray-800 dark:text-gray-300">
                         {formatAmount(row.expense)}
                       </td>
-                      <td
-                        className={`px-6 py-4 text-right text-sm ${amountClass(row.closing_balance)}`}
-                      >
-                        {formatAmount(row.closing_balance)}
+                      <td className="px-6 py-4 text-right text-sm text-gray-800 dark:text-gray-300">
+                        {formatAmount(row.payable)}
                       </td>
                       <td className="px-6 py-4 text-right text-sm text-gray-800 dark:text-gray-300">
                         {formatAmount(row.receivable)}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm text-gray-800 dark:text-gray-300">
-                        {formatAmount(row.payable)}
+                      <td
+                        className={`px-6 py-4 text-right text-sm ${amountClass(row.closing_balance)}`}
+                      >
+                        {formatAmount(row.closing_balance)}
                       </td>
                     </tr>
                   ))
@@ -320,13 +320,13 @@ export default function ShareholderSummary() {
                     <td className="px-6 py-3 text-right text-sm text-blue-800 dark:text-blue-200">
                       {formatAmount(totals.expense)}
                     </td>
-                    <td className="px-6 py-3" />
-                    <td className="px-6 py-3 text-right text-sm text-blue-800 dark:text-blue-200">
-                      {formatAmount(totals.receivable)}
-                    </td>
                     <td className="px-6 py-3 text-right text-sm text-blue-800 dark:text-blue-200">
                       {formatAmount(totals.payable)}
                     </td>
+                    <td className="px-6 py-3 text-right text-sm text-blue-800 dark:text-blue-200">
+                      {formatAmount(totals.receivable)}
+                    </td>
+                    <td className="px-6 py-3" />
                   </tr>
                   <tr className="bg-amber-100 font-bold dark:bg-amber-500/15">
                     <td

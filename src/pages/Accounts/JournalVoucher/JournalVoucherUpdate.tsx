@@ -744,7 +744,7 @@ export default function JournalVoucherUpdate() {
 
       {/* Sticky Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-4 px-6 py-3">
+        <div className="flex w-full items-center justify-end gap-4 px-6 py-3">
           <div className="hidden sm:block text-xs text-gray-500 dark:text-gray-400">
             {details.length} line{details.length !== 1 ? "s" : ""} ·{" "}
             <span className="font-mono">{formatAmount(totals.debit)}</span> Dr ·{" "}
