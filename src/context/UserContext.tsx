@@ -6,8 +6,15 @@ import {
   useEffect,
 } from "react";
 import axios, { AxiosResponse, AxiosError } from "axios";
-import { jwtDecode } from "jwt-decode";
 import { toast } from "react-hot-toast";
+import {
+  decodeToken,
+  onSessionExpired,
+  readStoredToken,
+  readStoredUser,
+  storeToken,
+  storeUser,
+} from "../services/session";
 // import { useNavigate } from "react-router";
 
 // type for user data
@@ -92,8 +99,12 @@ export const UserContextProvider = ({ children }: UserContextProviderProps) => {
         setLoading(false);
         setCurrentUser(res.data.user);
         
-        window.localStorage.setItem("jwtToken", res.data.access);
+        // storeToken also re-arms the expiry broadcast for the new session.
+        storeToken(res.data.access);
         window.localStorage.setItem("username", res.data.user.username);
+        // The only copy of the profile we will ever be given — cache it so a
+        // reload does not empty the header.
+        storeUser(res.data.user);
         onSuccess?.();
       }
       return res;
@@ -112,39 +123,40 @@ export const UserContextProvider = ({ children }: UserContextProviderProps) => {
     }
   };
 
-  // Fetch user data on component mount
-  useEffect(() => {
-    const fetchAPI = async (user_id: string) => {
-      try {
-        const res = await axios.get(`${api.base}/user/get/${user_id}`);
-        const data = res.data.user;
-        // console.log(data);
-        
-        if (res.data.status === "OK") {
-          setLoading(false);
-          setCurrentUser(data);
-        } else {
-          toast.error("User not found");
-        }
-      } catch (error: unknown) {
-        const err = error as AxiosError<{ message: string }>;
-        console.error(err);
-        toast.error(
-          err.response?.data?.message ||
-            "An error occurred while fetching user data"
-        );
-      }
-    };
+  // Last-resort profile when the cache predates this fix (or was cleared by
+  // hand): the JWT itself carries enough to name the user.
+  const userFromToken = (): User | null => {
+    const token = readStoredToken();
+    const claims = token ? (decodeToken(token) as MyToken | null) : null;
+    if (!claims?.username) return null;
 
-    const token = window.localStorage.getItem("jwtToken");
-    if (token) {
-      const decoded = jwtDecode<MyToken>(token);
-      const { username } = decoded;
-      fetchAPI(username);
-    } else {
-      console.log("No Token Found");
-    }
+    return {
+      id: "",
+      user_role: claims.user_role ?? "",
+      username: claims.username,
+      first_name: claims.username,
+      last_name: "",
+      email: "",
+      profile_pic: "",
+    };
+  };
+
+  // Restore the signed-in profile on reload. This used to call
+  // GET /user/get/<username>, which does not exist on the backend — it 404s,
+  // so currentUser stayed null after every refresh.
+  useEffect(() => {
+    if (currentUser) return;
+
+    const restored = readStoredUser<User>() ?? userFromToken();
+    if (restored) setCurrentUser(restored);
+    setLoading(false);
+    // Boot-time restore only; later updates flow through methodSignin.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // When the session dies (timer or a 401), the cached profile has to go too —
+  // otherwise the header keeps showing the signed-out user's name.
+  useEffect(() => onSessionExpired(() => setCurrentUser(null)), []);
 
   // Provide the context value
   const contextValue: UserContextType = {

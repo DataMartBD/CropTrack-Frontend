@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Fonts are linked here rather than @import-ed from index.css: a remote
+      @import cannot start downloading until the stylesheet that contains it
+      has itself downloaded and parsed, which serialises two round trips.
+
+      Noto Sans Bengali is the UI face — Outfit carries no Bengali glyphs, so
+      without it every Bangla string in the app falls back to whatever the OS
+      picks. Noto Serif Bengali is the printed-document face and is relied on
+      by the booking / certificate / challan templates.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Noto+Sans+Bengali:wght@100..900&family=Noto+Serif+Bengali:wght@100..900&display=swap"
+    />
   </head>
   <body class="dark:bg-gray-900">
     <div id="root"></div>

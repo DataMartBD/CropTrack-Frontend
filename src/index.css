@@ -1,14 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap")
-layer(base);
-
+/* Font <link>s live in index.html — see the comment there. */
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
   --font-*: initial;
-  --font-outfit: Outfit, sans-serif;
+  /*
+   * One stack for the whole UI. Outfit has no Bengali coverage, so the browser
+   * falls through to Noto Sans Bengali per glyph: Latin renders in Outfit,
+   * Bangla in Noto Sans Bengali, in the same run of text. Both are variable
+   * 100..900, so every Tailwind weight resolves in both scripts instead of
+   * being synthesised.
+   */
+  --font-sans: Outfit, "Noto Sans Bengali", sans-serif;
+  /* Retained as an alias — `font-outfit` is still referenced in places. */
+  --font-outfit: Outfit, "Noto Sans Bengali", sans-serif;
+  /* Printed documents only: booking / certificate / delivery challan. */
+  --font-bangla-serif: "Noto Serif Bengali", serif;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -187,7 +195,7 @@ layer(base);
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50;
+    @apply relative font-normal font-sans z-1 bg-gray-50;
   }
 }
 

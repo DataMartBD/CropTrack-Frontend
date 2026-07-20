@@ -1,149 +1,96 @@
-import PageMeta from "../../components/common/PageMeta";
-// import { useEffect, useState } from "react";
-import Farm from "/images/cold-storage/farm.svg";
-import {
-  FcInspection,
-  FcPaid,
-  FcShipped,FcMoneyTransfer} from "react-icons/fc";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+
+import PageMeta from "../../components/common/PageMeta";
+import { useUserContext } from "../../context/UserContext";
+import { formatBengaliDate } from "../../utils/bengaliDate";
+
+import brandMark from "../../assets/rahbar-icon.png";
+import brandLogo from "../../assets/rahbar-logo-horizontal.png";
 
 export default function Home() {
-  const navigate = useNavigate();
-  // const [userType, setCurrentUserType] = useState<string | null>(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { currentUser } = useUserContext();
 
-  // useEffect(() => {
-  //   setCurrentUserType(localStorage.getItem("user_type"));
-  // }, []);
+  // Bangla is the default language, so the date has to follow it rather than
+  // the browser locale.
+  const today = useMemo(
+    () =>
+      new Date().toLocaleDateString(
+        i18n.resolvedLanguage === "bn" ? "bn-BD" : "en-GB",
+        { weekday: "long", day: "numeric", month: "long", year: "numeric" }
+      ),
+    [i18n.resolvedLanguage]
+  );
+
+  // The Bengali (বঙ্গাব্দ) date the storage runs its season by, alongside the
+  // Gregorian one.
+  const todayBengali = useMemo(
+    () => formatBengaliDate(new Date(), i18n.resolvedLanguage ?? "bn"),
+    [i18n.resolvedLanguage]
+  );
 
   return (
     <>
       <PageMeta title="CropTrack" description="CropTrack Dashboard" />
 
-      {/* Main Section */}
-      <section
-        className="bg-[#1D2939] text-white rounded-lg bg-no-repeat bg-right-bottom bg-contain py-3"
-        style={{ backgroundImage: `url(${Farm})` }}
-      >
-        <div className="w-full flex flex-col md:flex-row items-center my-6 md:my-12">
-          <div className="flex flex-col w-full lg:w-1/3 justify-center items-start p-4">
-            <h1 className="text-4xl md:text-4xl  font-semibold p-1 text-[#F0DA78] tracking-loose">
-              CropTrack
-            </h1>
-            <h2 className="text-2xl text-white md:text-3xl leading-relaxed md:leading-snug mb-1">
-              Rahbar Cold Storage
-            </h2>
+      {/* Hero — the brand and the date, side by side. The logo sits beside the
+          date rather than above it, so it can be large without the card
+          getting tall. Stats cards go below. */}
+      <section className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-[#E8F3FB] via-white to-[#FDF2DE] shadow-sm dark:border-white/10 dark:from-[#0F3050] dark:via-gray-800 dark:to-[#3A2B10]">
+        {/* Two blurred colour blooms — the brand's ice blue and gold — give the
+            card its colour without competing with the logo for contrast. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 -left-16 h-64 w-64 rounded-full bg-[#3B93C9]/30 blur-3xl dark:bg-[#3B93C9]/25"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -bottom-28 h-72 w-72 rounded-full bg-[#E0A63C]/30 blur-3xl dark:bg-[#E0A63C]/20"
+        />
+
+        {/* The rail runs the brand's full palette top to bottom: navy, ice
+            blue, gold. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-2 bg-gradient-to-b from-[#0C2E4A] via-[#3B93C9] to-[#E0A63C]"
+        />
+
+        {/* The seal, oversized and ghosted back, is the only ornament. */}
+        <img
+          src={brandMark}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -bottom-16 hidden w-64 opacity-25 sm:block lg:w-72 dark:opacity-20"
+        />
+
+        <div className="relative flex flex-col gap-6 p-6 pl-8 sm:p-8 sm:pl-10 lg:flex-row lg:items-center lg:justify-between">
+          {/* The wordmark is navy on transparency, so it sits straight on the
+              light card. On the dark card it would disappear, so it is knocked
+              out to a white mono lockup instead of being boxed on a plate. */}
+          <img
+            src={brandLogo}
+            alt={t("rahbar")}
+            className="h-24 w-auto sm:h-32 lg:h-44 dark:brightness-0 dark:invert"
+          />
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#3B93C9]/40 bg-[#3B93C9]/10 px-4 py-2 text-sm font-semibold text-[#1B5D89] dark:border-[#3B93C9]/40 dark:bg-[#3B93C9]/15 dark:text-[#9DD2F2]">
+              {today}
+            </span>
+            {/* Green, so the two dates read as two facts rather than one
+                wrapped line. */}
+            <span className="rounded-full border border-[#0F7A5F]/40 bg-[#0F7A5F]/10 px-4 py-2 text-sm font-semibold text-[#0B5343] dark:border-[#12A37D]/40 dark:bg-[#12A37D]/15 dark:text-[#6FD9BC]">
+              {todayBengali}
+            </span>
+            {currentUser?.user_role && (
+              <span className="rounded-full bg-gradient-to-r from-[#E0A63C] to-[#C4851C] px-4 py-2 text-sm font-semibold text-[#0C2E4A] shadow-sm">
+                {currentUser.user_role}
+              </span>
+            )}
           </div>
         </div>
       </section>
-
-      {/* Grid container for 3 separate sections */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8 w-full">
-
-           {/* JV */}
-        <section
-          onClick={() => navigate("/accounts/journal-voucher")}
-          className="relative bg-[#7E9598] text-white rounded-lg bg-no-repeat bg-right-bottom bg-contain py-6 transform transition duration-300 hover:scale-[1.03] hover:shadow-lg hover:-translate-y-1 cursor-default"
-        >
-          <div className="p-6 pr-20">
-            <h3 className="text-white text-3xl font-semibold mb-4">
-              {t("journal_voucher")}
-            </h3>
-          </div>
-          <div className="absolute bottom-4 right-4">
-            <FcMoneyTransfer  size={100} className="opacity-90" />
-          </div>
-        </section>
-
-        {/* Booking */}
-        <section
-          onClick={() => navigate("/booking/new")}
-          className="relative bg-[#13725A] text-white rounded-lg bg-no-repeat bg-right-bottom bg-contain py-6 transform transition duration-300 hover:scale-[1.03] hover:shadow-lg hover:-translate-y-1 cursor-default"
-        >
-          <div className="p-6 pr-20">
-            <h3 className="text-white text-3xl font-semibold mb-4">
-              {t("booking")}
-            </h3>
-          </div>
-          <div className="absolute bottom-4 right-4">
-            <FcInspection size={100} className="opacity-90" />
-          </div>
-        </section>
-
-        {/* Certificate */}
-        <section
-          onClick={() => navigate("/certificate/new")}
-          className="relative bg-[#52AD59] text-white rounded-lg bg-no-repeat bg-right-bottom bg-contain py-6 transform transition duration-300 hover:scale-[1.03] hover:shadow-lg hover:-translate-y-1 cursor-default"
-        >
-          <div className="p-6 pr-20">
-            <h3 className="text-white text-3xl font-semibold mb-4">
-              {t("certificate")}
-            </h3>
-          </div>
-          <div className="absolute bottom-4 right-4">
-            <FcShipped size={100} className="opacity-90" />
-          </div>
-        </section>
-
-        {/* Pocket */}
-        <section
-          onClick={() => navigate("/certificate/list")}
-          className="relative bg-[#97813A] text-white rounded-lg bg-no-repeat bg-right-bottom bg-contain py-6 transform transition duration-300 hover:scale-[1.03] hover:shadow-lg hover:-translate-y-1 cursor-default"
-        >
-          <div className="p-6 pr-20">
-            <h3 className="text-white text-3xl font-semibold mb-4">
-              {t("inventory_flow")}
-            </h3>
-          </div>
-          <div className="absolute bottom-4 right-4">
-            <FcPaid size={100} className="opacity-90" />
-          </div>
-        </section>
-      </div>
-
-      {/* Stats */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8 container mx-auto">
-        <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-[#1D2939]">
-          <h1 className="text-5xl">
-            <FcFrame />
-          </h1>
-
-          <div className="mx-5">
-            <h4 className="text-2xl font-semibold text-white">4644</h4>
-            <div className="text-white">{t("stored_bags")}</div>
-          </div>
-        </div>
-        <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-[#1D2939]">
-          <h1 className="text-5xl">
-            <FcContacts />
-          </h1>
-
-          <div className="mx-5">
-            <h4 className="text-2xl font-semibold text-white">358</h4>
-            <div className="text-white">{t("reg_customers")}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-[#1D2939]">
-          <h1 className="text-5xl">
-            <FcInTransit />
-          </h1>
-          <div className="mx-5">
-            <h4 className="text-2xl font-semibold text-white">50</h4>
-            <div className="text-white">{t("todays_do")}</div>
-          </div>
-        </div>
-        <div className="flex items-center px-5 py-6 shadow-sm rounded-md bg-[#1D2939]">
-          <h1 className="text-5xl">
-            <FcSafe />
-          </h1>
-          <div className="mx-5">
-            <h4 className="text-2xl font-semibold text-white">107</h4>
-            <div className="text-white">{t("todays_collection")}</div>
-          </div>
-        </div>
-      </div> */}
     </>
   );
 }

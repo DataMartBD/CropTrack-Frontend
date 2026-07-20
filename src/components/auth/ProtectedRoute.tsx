@@ -1,22 +1,16 @@
-import { Navigate, Outlet } from 'react-router';
+import { Navigate, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
-import { useEffect } from 'react';
 
 export default function ProtectedRoute() {
-  const { isAuthenticated, setToken } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    // Check for token in localStorage on component mount
-    const token = localStorage.getItem('jwtToken');
-    if (token && !isAuthenticated) {
-      setToken(token);
-    }
-  }, [isAuthenticated, setToken]);
-
-  // Check both the auth context and localStorage
-  const token = localStorage.getItem('jwtToken');
-  if (!isAuthenticated && !token) {
-    return <Navigate to="/signin" replace />;
+  // AuthContext is the single source of truth: it seeds itself from
+  // localStorage and only keeps a token whose exp is still in the future.
+  // Reading localStorage here as a fallback used to let an expired token keep
+  // rendering protected pages — and write it back into the context.
+  if (!isAuthenticated) {
+    return <Navigate to="/signin" replace state={{ from: location.pathname }} />;
   }
 
   return <Outlet />;
