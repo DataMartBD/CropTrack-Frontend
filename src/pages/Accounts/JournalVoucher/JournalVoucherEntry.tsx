@@ -41,6 +41,8 @@ interface SubAccount {
 interface ProjectCode {
   xtype: string;
   xcode: string;
+  /** Bangla name of the unit; the row still posts xcode as xproj. */
+  xdesc?: string;
 }
 
 interface JournalHeader {
@@ -543,7 +545,7 @@ export default function JournalVoucherEntry() {
                       <option value="">Select Project</option>
                       {projects.map((p) => (
                         <option key={p.xcode} value={p.xcode}>
-                          {p.xcode}
+                          {p.xdesc || p.xcode}
                         </option>
                       ))}
                     </select>

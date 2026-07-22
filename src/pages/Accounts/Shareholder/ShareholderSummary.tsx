@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { getData } from "../../../services/apiClient";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptions } from "../../../hooks/useProjectOptions";
 
 interface SummaryRow {
   heir_name: string;
@@ -66,36 +61,17 @@ export default function ShareholderSummary() {
   const [startDate, setStartDate] = useState<Date | null>(firstOfMonth);
   const [endDate, setEndDate] = useState<Date | null>(now);
   const [project, setProject] = useState<string>("");
-  const [projects, setProjects] = useState<string[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects, loading: loadingProjects } = useProjectOptions();
 
   const [data, setData] = useState<SummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
 
-  // Project options — the report is always scoped to a single project, so the
-  // first one is selected by default.
+  // The report is always scoped to a single project, so the first one is
+  // selected as soon as the list arrives.
   useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const result = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = Array.from(
-          new Set((result || []).map((p) => p.xcode).filter(Boolean)),
-        );
-        setProjects(codes);
-        setProject((prev) => prev || codes[0] || "");
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, []);
+    setProject((prev) => prev || projects[0]?.code || "");
+  }, [projects]);
 
   const fetchReport = async () => {
     if (!project || !startDate || !endDate) return;
@@ -146,8 +122,8 @@ export default function ShareholderSummary() {
             >
               {projects.length === 0 && <option value="">—</option>}
               {projects.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.code} value={p.code}>
+                  {p.label}
                 </option>
               ))}
             </select>

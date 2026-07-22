@@ -1,12 +1,7 @@
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { ChangeEvent } from "react";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import { getData } from "../../services/apiClient";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptionsWithAll } from "../../hooks/useProjectOptions";
 
 interface TrialBalanceFilterProps {
   formData: {
@@ -26,27 +21,7 @@ const TrialBalanceFilter: React.FC<TrialBalanceFilterProps> = ({
   onGenerate,
   isLoading = false,
 }) => {
-  const [projects, setProjects] = useState<string[]>(["All"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const data = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (data || []).map((p) => p.xcode);
-        setProjects(["All", ...codes]);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, []);
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
 
   return (
     <div className="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 p-5 rounded-xl mb-6 shadow-sm">
@@ -85,13 +60,13 @@ const TrialBalanceFilter: React.FC<TrialBalanceFilterProps> = ({
             disabled={loadingProjects}
             className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-9 text-sm shadow-theme-xs text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 disabled:opacity-50"
           >
-            {projects.map((code) => (
+            {projects.map((p) => (
               <option
-                key={code}
-                value={code}
+                key={p.code}
+                value={p.code}
                 className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
               >
-                {code}
+                {p.label}
               </option>
             ))}
           </select>

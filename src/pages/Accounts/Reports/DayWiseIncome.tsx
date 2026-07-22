@@ -4,12 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { getData } from "../../../services/apiClient";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 
 type ReportType = "summary" | "details";
 
@@ -66,34 +61,13 @@ export default function DayWiseIncome() {
   const [fromDate, setFromDate] = useState<Date | null>(firstOfMonth);
   const [toDate, setToDate] = useState<Date | null>(now);
   const [project, setProject] = useState<string>("All");
-  const [projects, setProjects] = useState<string[]>(["All"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
   const [reportType, setReportType] = useState<ReportType>("summary");
 
   const [data, setData] = useState<IncomeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [page, setPage] = useState(1);
-
-  // Project options
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const result = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (result || []).map((p) => p.xcode).filter(Boolean);
-        setProjects(["All", ...Array.from(new Set(codes))]);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, []);
 
   // Re-fetch automatically when the report type is toggled (after first Get)
   useEffect(() => {
@@ -188,8 +162,8 @@ export default function DayWiseIncome() {
               className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
             >
               {projects.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.code} value={p.code}>
+                  {p.label}
                 </option>
               ))}
             </select>

@@ -1,19 +1,14 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { getData } from "../../../services/apiClient";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
 import { ReportHeader } from "../../../components/reports/ReportHeader";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 
 interface LedgerItem {
   xvoucher: string;
@@ -391,29 +386,9 @@ export default function ChitSheet() {
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
   const [toDate, setToDate] = useState<Date | null>(new Date());
   const [project, setProject] = useState<string>("All");
-  const [projects, setProjects] = useState<string[]>(["All"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
   const [loading, setLoading] = useState(false);
   const [ledgerData, setLedgerData] = useState<LedgerResponse | null>(null);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const data = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (data || []).map((p) => p.xcode);
-        setProjects(["All", ...codes]);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, []);
 
   const handleGetLedger = async () => {
     if (!fromDate || !toDate) return;
@@ -577,8 +552,8 @@ export default function ChitSheet() {
               className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
             >
               {projects.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.code} value={p.code}>
+                  {p.label}
                 </option>
               ))}
             </select>
@@ -623,7 +598,7 @@ export default function ChitSheet() {
               className="flex-1 px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg disabled:opacity-50 h-[42px] flex items-center justify-center gap-2"
             >
               <FiPrinter />
-              Print Report
+              Print
             </button>
           </div>
         </div>

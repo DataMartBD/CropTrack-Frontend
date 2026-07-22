@@ -1,14 +1,12 @@
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import { getData } from "../../../services/apiClient";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import {
+  ALL_PROJECTS,
+  useProjectOptions,
+} from "../../../hooks/useProjectOptions";
 
 interface ShareholderPLRow {
   business_id: number;
@@ -68,8 +66,8 @@ export default function ShareholderPL() {
   const [year, setYear] = useState<string>(String(now.getFullYear()));
   const [month, setMonth] = useState<string>(String(now.getMonth() + 1));
   const [project, setProject] = useState<string>("All");
-  const [projects, setProjects] = useState<string[]>(["All", "Central Account"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects: projectOptions, loading: loadingProjects } =
+    useProjectOptions();
 
   const [rows, setRows] = useState<ShareholderPLRow[]>([]);
   const [meta, setMeta] = useState<ShareholderPLMeta | null>(null);
@@ -85,26 +83,16 @@ export default function ShareholderPL() {
     project: string;
   } | null>(null);
 
-  // Project options (with Central Account pinned first)
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const result = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (result || []).map((p) => p.xcode).filter(Boolean);
-        const unique = Array.from(new Set(["All", "Central Account", ...codes]));
-        setProjects(unique);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
+  // Central Account is the one this report is usually run for, so it stays
+  // pinned directly under All wherever the API happens to list it.
+  const projects = useMemo(() => {
+    const central = projectOptions.find((p) => p.code === "Central Account") ?? {
+      code: "Central Account",
+      label: "Central Account",
     };
-    fetchProjects();
-  }, []);
+    const rest = projectOptions.filter((p) => p.code !== "Central Account");
+    return [ALL_PROJECTS, central, ...rest];
+  }, [projectOptions]);
 
   const fetchReport = async () => {
     setIsLoading(true);
@@ -243,8 +231,8 @@ export default function ShareholderPL() {
               className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
             >
               {projects.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.code} value={p.code}>
+                  {p.label}
                 </option>
               ))}
             </select>

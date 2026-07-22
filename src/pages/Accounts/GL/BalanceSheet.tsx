@@ -9,12 +9,7 @@ import { Spinner } from "../../../components/ui/ut/Spinner";
 import { FiPrinter } from "react-icons/fi";
 import axios from "axios";
 import { ReportHeader } from "../../../components/reports/ReportHeader";
-import { getData } from "../../../services/apiClient";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 
 // ... (interfaces and helper functions remain the same)
 
@@ -299,29 +294,9 @@ export default function BalanceSheet() {
     initialTo ? new Date(initialTo) : new Date(),
   );
   const [project, setProject] = useState<string>("All");
-  const [projects, setProjects] = useState<string[]>(["All"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<BalanceSheetResponse | null>(null);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const result = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (result || []).map((p) => p.xcode);
-        setProjects(["All", ...codes]);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, []);
 
   const handleFetchReport = async () => {
     if (!fromDate || !toDate) return;
@@ -477,8 +452,8 @@ export default function BalanceSheet() {
               className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
             >
               {projects.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.code} value={p.code}>
+                  {p.label}
                 </option>
               ))}
             </select>

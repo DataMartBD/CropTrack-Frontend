@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -8,11 +8,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import { Spinner } from "../../../components/ui/ut/Spinner";
 import { getData } from "../../../services/apiClient";
 import { toBengaliDigits } from "../../../utils/bengaliDate";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 
 interface ReportItem {
   description: string;
@@ -382,8 +378,7 @@ export default function MonthlyReport() {
   const [fromDate, setFromDate] = useState<Date | null>(firstOfYear);
   const [toDate, setToDate] = useState<Date | null>(now);
   const [project, setProject] = useState<string>("All");
-  const [projects, setProjects] = useState<string[]>(["All"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
 
   const [data, setData] = useState<MonthlyReportResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -396,25 +391,6 @@ export default function MonthlyReport() {
     to: Date;
   } | null>(null);
   const [reportProject, setReportProject] = useState<string>("All");
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const result = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (result || []).map((p) => p.xcode).filter(Boolean);
-        setProjects(["All", ...Array.from(new Set(codes))]);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-    fetchProjects();
-  }, []);
 
   const fetchReport = async () => {
     if (!fromDate || !toDate) return;
@@ -468,7 +444,11 @@ export default function MonthlyReport() {
     [],
   );
 
-  const projectLabel = reportProject === "All" ? "সকল প্রকল্প" : reportProject;
+  // The sheet is a Bangla document, so it names the unit rather than its code.
+  const projectLabel =
+    reportProject === "All"
+      ? "সকল প্রকল্প"
+      : (projects.find((p) => p.code === reportProject)?.label ?? reportProject);
   const unitLabel = reportProject === "All" ? "" : unitSuffix(reportProject);
 
   const hasRows =
@@ -568,8 +548,8 @@ export default function MonthlyReport() {
               className="h-[42px] w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50 dark:border-gray-700 dark:text-white dark:focus:border-brand-500"
             >
               {projects.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.code} value={p.code}>
+                  {p.label}
                 </option>
               ))}
             </select>

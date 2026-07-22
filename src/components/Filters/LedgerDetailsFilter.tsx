@@ -3,11 +3,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { getData } from "../../services/apiClient";
 import SearchableSelect from "../ui/ut/SearchableSelect";
-
-interface ProjectCode {
-  xtype: string;
-  xcode: string;
-}
+import { useProjectOptionsWithAll } from "../../hooks/useProjectOptions";
 
 interface Account {
   xacc: string;
@@ -41,30 +37,13 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
   onGenerate,
   isLoading = false,
 }) => {
-  const [projects, setProjects] = useState<string[]>(["All"]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [accSource, setAccSource] = useState("");
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        const data = await getData<ProjectCode[]>(
-          "/masterdata/common-codes/list/",
-          { xtype: "Project" },
-        );
-        const codes = (data || []).map((p) => p.xcode);
-        setProjects(["All", ...codes]);
-      } catch (err) {
-        console.error("Failed to load projects", err);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-
     const fetchAccounts = async () => {
       try {
         const data = await getData<Account[]>("/accounts/chartofaccounts/");
@@ -74,7 +53,6 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
       }
     };
 
-    fetchProjects();
     fetchAccounts();
   }, []);
 
@@ -178,9 +156,9 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
             disabled={loadingProjects}
             className="h-[42px] w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white disabled:opacity-50"
           >
-            {projects.map((code) => (
-              <option key={code} value={code} className="dark:bg-gray-900">
-                {code}
+            {projects.map((p) => (
+              <option key={p.code} value={p.code} className="dark:bg-gray-900">
+                {p.label}
               </option>
             ))}
           </select>
