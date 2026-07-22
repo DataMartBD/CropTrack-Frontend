@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getData } from "../../services/apiClient";
-import type { DashboardData } from "./types";
+import type { DashboardChartData, DashboardData } from "./types";
 
-type DashboardState = {
-  data: DashboardData | null;
+type Resource<T> = {
+  data: T | null;
   /** True only until the first payload lands — a refresh never re-skeletons. */
   isLoading: boolean;
   /** True while a background refresh is in flight over existing data. */
@@ -15,8 +15,16 @@ type DashboardState = {
   refresh: () => void;
 };
 
-export function useDashboardData(): DashboardState {
-  const [data, setData] = useState<DashboardData | null>(null);
+/**
+ * One dashboard endpoint, loaded and re-loadable.
+ *
+ * The figures and the charts come from two endpoints, and the charts are the
+ * slower of the two. Keeping them separate lets the balances paint as soon as
+ * they arrive instead of waiting behind twelve months of aggregation — the
+ * charts fill in under their own skeleton a moment later.
+ */
+function useApiResource<T>(endpoint: string, fallbackError: string): Resource<T> {
+  const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +49,7 @@ export function useDashboardData(): DashboardState {
     if (hasData.current) setIsRefreshing(true);
 
     try {
-      const payload = await getData<DashboardData>("/accounts/dashboard/");
+      const payload = await getData<T>(endpoint);
       if (!isMounted.current || id !== requestId.current) return;
 
       setData(payload);
@@ -62,9 +70,7 @@ export function useDashboardData(): DashboardState {
       if (failure?.response?.status === 401) return;
 
       setError(
-        failure?.response?.data?.message ??
-          failure?.message ??
-          "Failed to load dashboard.",
+        failure?.response?.data?.message ?? failure?.message ?? fallbackError,
       );
     } finally {
       if (isMounted.current && id === requestId.current) {
@@ -72,7 +78,7 @@ export function useDashboardData(): DashboardState {
         setIsRefreshing(false);
       }
     }
-  }, []);
+  }, [endpoint, fallbackError]);
 
   useEffect(() => {
     void load();
@@ -86,4 +92,20 @@ export function useDashboardData(): DashboardState {
     lastUpdated,
     refresh: () => void load(),
   };
+}
+
+/** Balances, bank accounts and the period roll-ups. */
+export function useDashboardData(): Resource<DashboardData> {
+  return useApiResource<DashboardData>(
+    "/accounts/dashboard/",
+    "Failed to load dashboard.",
+  );
+}
+
+/** The month-by-month series behind the two trend charts. */
+export function useDashboardCharts(): Resource<DashboardChartData> {
+  return useApiResource<DashboardChartData>(
+    "/accounts/dashboard/chart/",
+    "Failed to load charts.",
+  );
 }

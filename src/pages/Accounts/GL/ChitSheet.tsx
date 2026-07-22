@@ -39,14 +39,29 @@ interface LedgerSummary {
   balance: number;
 }
 
+interface BankBalance {
+  xacc: string;
+  xdesc: string;
+  xbalance: number;
+}
+
 interface LedgerResponse {
   deposits: LedgerItem[];
   expenses: LedgerItem[];
   summary: LedgerSummary;
   message: string;
+  /** Closing position, added by the API after the sheet shipped. */
+  total_cash?: number;
+  banks?: BankBalance[];
 }
 
 const formatAmount = (value: number) => Math.abs(value).toLocaleString();
+
+/**
+ * Balances keep their sign — an overdrawn account reading as a positive figure
+ * would be read as money the business has.
+ */
+const formatBalance = (value: number) => (value ?? 0).toLocaleString();
 
 const groupData = (items: LedgerItem[]) => {
   const groups: Record<string, Record<string, LedgerItem[]>> = {};
@@ -72,7 +87,7 @@ const getGroupTotal = (items: LedgerItem[], type: "deposit" | "expense") => {
   }, 0);
 };
 
-const GeneralLedgerTemplate = ({
+const ChitSheetTemplate = ({
   ledgerData,
   groupedDeposits,
   groupedExpenses,
@@ -87,12 +102,16 @@ const GeneralLedgerTemplate = ({
 }) => {
   const chitNo = ledgerData.deposits[0]?.xvoucher?.split("-")?.[2] || "---";
 
+  const banks = ledgerData.banks ?? [];
+  const bankTotal = banks.reduce((sum, bank) => sum + (bank.xbalance || 0), 0);
+  const cashTotal = ledgerData.total_cash ?? 0;
+
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
       <ReportHeader
         title={
           ledgerData.deposits[0]?.business_name ||
-          "রাহবার হিমাগার (প্রাঃ) লিমিটেড"
+          "রাহ্‌বার হিমাগার (প্রাঃ) লিমিটেড"
         }
       >
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
@@ -107,7 +126,7 @@ const GeneralLedgerTemplate = ({
 
       <div className="flex items-center justify-between bg-green-50 border-y border-green-800 py-1 px-3 mb-4">
         <div className="font-semibold text-sm bg-green-800 text-white px-3 py-0.5 rounded-full">
-          GENERAL LEDGER
+          চিট শিট
         </div>
         <div className="text-sm font-medium text-gray-700">
           চিট নং: <span className="font-mono">{chitNo}</span>
@@ -133,7 +152,7 @@ const GeneralLedgerTemplate = ({
               >
                 <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
-                    Project: {projName}
+                     {projName}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
                     {formatAmount(projTotal)}
@@ -208,7 +227,7 @@ const GeneralLedgerTemplate = ({
               >
                 <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
-                    Project: {projName}
+                    {projName}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
                     {formatAmount(projTotal)}
@@ -278,6 +297,81 @@ const GeneralLedgerTemplate = ({
         </div>
       </div>
 
+      {/* Closing position. Rendered only when the API sends it, so a backend
+          that has not been updated yet still prints a valid chit. */}
+      {(banks.length > 0 || ledgerData.total_cash != null) && (
+        <div className="mt-4 border border-black break-inside-avoid">
+          <div className="border-b border-black bg-gray-100 print:bg-transparent px-2 py-1 text-sm font-bold">
+            ব্যাংক ও নগদ অ্যামাউন্ট / Bank &amp; Cash Position
+          </div>
+
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-gray-400 bg-gray-50 print:bg-transparent">
+                <th className="w-8 border-r border-gray-300 px-2 py-1 text-left font-semibold">
+                  নং
+                </th>
+                <th className="w-20 border-r border-gray-300 px-2 py-1 text-left font-semibold">
+                  A/C
+                </th>
+                <th className="border-r border-gray-300 px-2 py-1 text-left font-semibold">
+                  হিসাবের বিবরণ
+                </th>
+                <th className="w-32 px-2 py-1 text-right font-semibold">
+                  অ্যামাউন্ট
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {banks.map((bank, idx) => (
+                <tr
+                  key={bank.xacc}
+                  className="border-b border-gray-200 last:border-b-0"
+                >
+                  <td className="border-r border-gray-100 px-2 py-1 text-gray-600">
+                    {idx + 1}
+                  </td>
+                  <td className="border-r border-gray-100 px-2 py-1 font-mono text-gray-700">
+                    {bank.xacc}
+                  </td>
+                  <td className="border-r border-gray-100 px-2 py-1">
+                    {bank.xdesc}
+                  </td>
+                  <td className="px-2 py-1 text-right font-mono tabular-nums">
+                    {formatBalance(bank.xbalance)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-gray-400 font-semibold">
+                <td colSpan={3} className="px-2 py-1 text-right">
+                  মোট ব্যাংক অ্যামাউন্ট
+                </td>
+                <td className="border-t border-gray-300 px-2 py-1 text-right font-mono tabular-nums">
+                  {formatBalance(bankTotal)}
+                </td>
+              </tr>
+              <tr className="font-semibold">
+                <td colSpan={3} className="px-2 py-1 text-right">
+                  নগদ অ্যামাউন্ট / Cash in Hand
+                </td>
+                <td className="px-2 py-1 text-right font-mono tabular-nums">
+                  {formatBalance(cashTotal)}
+                </td>
+              </tr>
+              <tr className="border-t border-black bg-gray-100 print:bg-transparent font-bold">
+                <td colSpan={3} className="px-2 py-1 text-right">
+                  সর্বমোট অ্যামাউন্ট
+                </td>
+                <td className="px-2 py-1 text-right font-mono tabular-nums">
+                  {formatBalance(bankTotal + cashTotal)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
 
       <div className="mt-12 print:mt-16 pt-4 break-inside-avoid">
         <div className="grid grid-cols-2 gap-12 text-center text-xs">
@@ -293,7 +387,7 @@ const GeneralLedgerTemplate = ({
   );
 };
 
-export default function GeneralLedger() {
+export default function ChitSheet() {
   const [fromDate, setFromDate] = useState<Date | null>(new Date());
   const [toDate, setToDate] = useState<Date | null>(new Date());
   const [project, setProject] = useState<string>("All");
@@ -353,7 +447,7 @@ export default function GeneralLedger() {
         },
       });
 
-      console.log("General Ledger Response:", response);
+      console.log("Chit Sheet Response:", response);
 
       if (response.data && (response.data.deposits || response.data.expenses)) {
         setLedgerData(response.data as LedgerResponse);
@@ -447,7 +541,7 @@ export default function GeneralLedger() {
 
     const root = createRoot(container);
     root.render(
-      <GeneralLedgerTemplate
+      <ChitSheetTemplate
         ledgerData={ledgerData}
         groupedDeposits={groupedDeposits}
         groupedExpenses={groupedExpenses}
@@ -467,11 +561,8 @@ export default function GeneralLedger() {
 
   return (
     <div>
-      <PageMeta
-        title="General Ledger - Crop Track"
-        description="General Ledger"
-      />
-      <PageBreadcrumb pageTitle="General Ledger" />
+      <PageMeta title="Chit Sheet - Crop Track" description="Chit Sheet" />
+      <PageBreadcrumb pageTitle="Chit Sheet" />
 
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
         <div className="flex flex-wrap items-end gap-4 mb-8 print:hidden">
@@ -544,7 +635,7 @@ export default function GeneralLedger() {
         ) : ledgerData ? (
           <div className="overflow-x-auto print:hidden  flex justify-center bg-gray-50/50 dark:bg-[#020d1a] py-8 rounded-2xl border border-gray-100 dark:border-gray-800">
             <div className="max-w-[210mm] w-full transform scale-[0.9] sm:scale-100 origin-top">
-              <GeneralLedgerTemplate
+              <ChitSheetTemplate
                 ledgerData={ledgerData}
                 groupedDeposits={groupedDeposits}
                 groupedExpenses={groupedExpenses}

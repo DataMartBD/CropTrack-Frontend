@@ -79,7 +79,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ data }) => {
           </h6>
 
           <div className="inline-block px-3 py-0.5 mb-2 bg-green-800 text-white text-[10px] rounded-full tracking-wider uppercase">
-            রাহবার এগ্রো কমপ্লেক্স (প্রাঃ) লিমিটেড এর অঙ্গ প্রতিষ্ঠান
+            রাহ্‌বার এগ্রো কমপ্লেক্স (প্রাঃ) লিমিটেড এর অঙ্গ প্রতিষ্ঠান
           </div>
 
           <div className="flex justify-center items-center gap-4 mb-2">
@@ -87,7 +87,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ data }) => {
             <div className="hidden md:block h-px w-12 bg-green-800/30"></div>
 
             <h1 className="text-3xl font-black text-green-900 tracking-tight drop-shadow-sm">
-              রাহবার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪
+              রাহ্‌বার হিমাগার (প্রাঃ) লিমিটেড ইউনিট - ৪
             </h1>
 
             {/* Decorative Line Right */}

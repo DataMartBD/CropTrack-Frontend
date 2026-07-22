@@ -60,18 +60,27 @@ export const formatPercent = (
 
 /**
  * Axis ticks need a unit, and the one to use depends on the size of the
- * figures — crore ticks on a ledger that deals in thousands would all read
- * 0.00. Picks the largest unit the data actually fills, in the lakh/crore
- * system these books are kept in.
+ * figures — crore ticks on a ledger that deals in thousands would all read 0.00.
+ *
+ * The test is not "does the peak reach this unit" but "does it reach it with
+ * digits to spare": scaled by the divisor, the top of the axis has to land in
+ * [10, 1000), so every tick keeps two or three significant figures. Each
+ * threshold is therefore ten times its own divisor, not one.
+ *
+ * That distinction is the whole point. An income statement peaking at
+ * ৳31,471,987 *is* a crore-sized number, and the naive rule labels it in crore
+ * — but then its quiet months (৳420,708) round to 0.0 and half the chart sits
+ * flat on the axis. The same figures in lakh run 4 to 315, and every month has
+ * a height that can be read.
  */
 export type AmountUnit = { divisor: number; labelKey: string };
 
 export const pickAmountUnit = (maxAbsolute: number): AmountUnit =>
-  maxAbsolute >= 1e7
+  maxAbsolute >= 1e8
     ? { divisor: 1e7, labelKey: "unit_crore" }
-    : maxAbsolute >= 1e5
+    : maxAbsolute >= 1e6
       ? { divisor: 1e5, labelKey: "unit_lakh" }
-      : maxAbsolute >= 1e3
+      : maxAbsolute >= 1e4
         ? { divisor: 1e3, labelKey: "unit_thousand" }
         : { divisor: 1, labelKey: "unit_taka" };
 

@@ -2,13 +2,11 @@ import React from "react";
 
 interface ReportHeaderProps {
   title: string;
-  address?: string;
   children?: React.ReactNode;
 }
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({
   title,
-  address = "বটতলী, বীরগঞ্জ, দিনাজপুর।",
   children,
 }) => {
   return (
@@ -42,7 +40,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
         </h6>
 
         <div className="inline-block px-2 py-0.5 mb-1 bg-green-800 text-white text-[9px] rounded-sm uppercase">
-          রাহবার এগ্রো কমপ্লেক্স (প্রাঃ) লিমিটেড এর অঙ্গ প্রতিষ্ঠান
+          আল্লাহ ভরসা
         </div>
 
         <div className="flex justify-center items-center gap-2 mb-1">
@@ -51,10 +49,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
           <div className="hidden md:block h-px w-8 bg-green-800/30"></div>
         </div>
 
-        <div className="flex flex-col items-center justify-center">
-          <p className="text-xs text-zinc-700">{address}</p>
-          <div className="flex gap-4 mt-0.5">{children}</div>
-        </div>
+        <div className="flex justify-center gap-4">{children}</div>
       </div>
     </div>
   );

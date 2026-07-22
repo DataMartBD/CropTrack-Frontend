@@ -18,10 +18,14 @@ import { formatBengaliDate } from "../../utils/bengaliDate";
 import { formatTaka, localizeDigits } from "../../utils/format";
 import BankAccountsCard from "./components/BankAccountsCard";
 import CashFlowCard from "./components/CashFlowCard";
-import DashboardSkeleton from "./components/DashboardSkeleton";
+import CashFlowTrendCard from "./components/CashFlowTrendCard";
+import DashboardSkeleton, {
+  ChartRowSkeleton,
+} from "./components/DashboardSkeleton";
 import IncomeStatementCard from "./components/IncomeStatementCard";
+import IncomeTrendCard from "./components/IncomeTrendCard";
 import StatTile from "./components/StatTile";
-import { useDashboardData } from "./useDashboardData";
+import { useDashboardCharts, useDashboardData } from "./useDashboardData";
 
 import brandMark from "../../assets/rahbar-icon.png";
 
@@ -33,6 +37,22 @@ export default function Home() {
 
   const { data, isLoading, isRefreshing, error, lastUpdated, refresh } =
     useDashboardData();
+
+  // Second endpoint, loaded alongside rather than behind the figures.
+  const {
+    data: charts,
+    isLoading: isChartsLoading,
+    isRefreshing: isChartsRefreshing,
+    error: chartsError,
+    refresh: refreshCharts,
+  } = useDashboardCharts();
+
+  const reloadAll = () => {
+    refresh();
+    refreshCharts();
+  };
+  const isBusy =
+    isLoading || isRefreshing || isChartsLoading || isChartsRefreshing;
 
   // Bangla is the default language, so the date has to follow it rather than
   // the browser locale.
@@ -165,29 +185,34 @@ export default function Home() {
 
           <button
             type="button"
-            onClick={refresh}
-            disabled={isLoading || isRefreshing}
+            onClick={reloadAll}
+            disabled={isBusy}
             className="inline-flex items-center gap-2 rounded-lg border border-[#0F7A5F]/30 bg-[#0F7A5F]/[0.07] px-3.5 py-1.5 text-sm font-medium text-[#0B5343] transition-colors hover:bg-[#0F7A5F]/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#12A37D]/30 dark:bg-[#12A37D]/10 dark:text-[#6FD9BC] dark:hover:bg-[#12A37D]/20"
           >
             <LuRefreshCw
               aria-hidden="true"
-              className={isRefreshing ? "animate-spin" : undefined}
+              className={
+                isRefreshing || isChartsRefreshing ? "animate-spin" : undefined
+              }
             />
             {t("refresh")}
           </button>
         </div>
       </section>
 
-      {error && (
+      {/* One banner for both endpoints. Two stacked red strips saying almost the
+          same thing would read as twice the trouble; the retry reloads both
+          either way. */}
+      {(error || chartsError) && (
         <div
           role="alert"
           className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
         >
           <LuCircleAlert aria-hidden="true" className="size-5 shrink-0" />
-          <span className="flex-1">{error}</span>
+          <span className="flex-1">{error ?? chartsError}</span>
           <button
             type="button"
-            onClick={refresh}
+            onClick={reloadAll}
             className="rounded-lg border border-red-300 px-3 py-1.5 font-medium transition-colors hover:bg-red-100 dark:border-red-500/40 dark:hover:bg-red-500/20"
           >
             {t("retry")}
@@ -260,6 +285,36 @@ export default function Home() {
               theme={theme}
             />
           </div>
+        </div>
+      ) : null}
+
+      {/* The same two concerns as the cards above — cash movement and the
+          bottom line — read across the year instead of at a point in it. They
+          sit below rather than beside, because the row above answers "where do
+          we stand today" and this one answers "how did we get here"; a reader
+          asking the first question shouldn't have to scroll past the second.
+
+          Two columns from xl only: at lg a chart card would be half of a
+          1024px row, and seven months of paired columns need more width than
+          that before the month labels start overlapping. */}
+      {isChartsLoading ? (
+        <div className="mt-4">
+          <ChartRowSkeleton />
+        </div>
+      ) : charts ? (
+        <div
+          className={`mt-4 grid grid-cols-1 items-start gap-4 transition-opacity duration-200 xl:grid-cols-2 ${
+            isChartsRefreshing ? "opacity-60" : "opacity-100"
+          }`}
+        >
+          <CashFlowTrendCard
+            months={charts.deposit_expense ?? []}
+            theme={theme}
+          />
+          <IncomeTrendCard
+            months={charts.income_statement ?? []}
+            theme={theme}
+          />
         </div>
       ) : null}
     </>

@@ -34,11 +34,12 @@ import JournalVoucherList from "./pages/Accounts/JournalVoucher/JournalVoucherLi
 import JournalVoucherEntry from "./pages/Accounts/JournalVoucher/JournalVoucherEntry";
 import JournalVoucherUpdate from "./pages/Accounts/JournalVoucher/JournalVoucherUpdate";
 import JournalVoucherView from "./pages/Accounts/JournalVoucher/JournalVoucherView";
-import GeneralLedger from "./pages/Accounts/GL/GeneralLedger";
+import ChitSheet from "./pages/Accounts/GL/ChitSheet";
 import BalanceSheet from "./pages/Accounts/GL/BalanceSheet";
 import BankCashBalanceSheet from "./pages/Accounts/Reports/BankCashBalanceSheet";
 import LoanReports from "./pages/Accounts/Reports/LoanReports";
 import DayWiseIncome from "./pages/Accounts/Reports/DayWiseIncome";
+import MonthlyReport from "./pages/Accounts/Reports/MonthlyReport";
 import TrialBalance from "./pages/Reports/TrialBalance";
 import CodeManual from "./pages/Reports/CodeManual";
 import LedgerDetails from "./pages/Reports/LedgerDetails";
@@ -102,10 +103,7 @@ export default function App() {
                 element={<JournalVoucherView />}
               />
               <Route path="/accounts/loanm" element={<LoanManagement />} />
-              <Route
-                path="/accounts/general-ledger"
-                element={<GeneralLedger />}
-              />
+              <Route path="/accounts/chit-sheet" element={<ChitSheet />} />
               <Route
                 path="/accounts/bank-cash-balance"
                 element={<BankCashBalanceSheet />}
@@ -118,6 +116,10 @@ export default function App() {
               <Route
                 path="/accounts/report/day-wise-income"
                 element={<DayWiseIncome />}
+              />
+              <Route
+                path="/accounts/report/monthly"
+                element={<MonthlyReport />}
               />
 
               <Route path="/reports/trial-balance" element={<TrialBalance />} />

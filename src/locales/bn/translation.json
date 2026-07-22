@@ -1,6 +1,6 @@
 {
   "welcome": "ক্রপট্র্যাকে স্বাগতম",
-  "rahbar": "রাহবার হিমাগার",
+  "rahbar": "রাহ্‌বার হিমাগার",
   "rahbar_legal": "রাহ্‌বার হিমাগার প্রাইভেট লিমিটেড",
   "menu": "মেনু",
   "close": "বন্ধ করুন",
@@ -100,7 +100,7 @@
   "chart_of_accounts": "চার্ট অফ একাউন্টস",
   "accounts_group": "একাউন্টস গ্রুপ",
   "journal_voucher": "জার্নাল ভাওচার",
-  "general_ledger": "জমা খরচ রিপোর্ট",
+  "chit_sheet": "চিট শিট",
   "ledger_report": "লেজার রিপোর্ট",
   "rate_setup": "রেট সেটআপ",
   "counted_token": "কাউন্টেড টোকেন",
@@ -122,6 +122,7 @@
   "shareholder_pl": "শেয়ারহোল্ডার পি/এল",
   "shareholder_summary": "শেয়ারহোল্ডার সারসংক্ষেপ",
   "day_wise_income": "দৈনিক আয়",
+  "monthly_report": "মাসিক প্রতিবেদন",
   "financial_overview": "আর্থিক সারসংক্ষেপ",
   "last_updated": "সর্বশেষ হালনাগাদ",
   "refresh": "রিফ্রেশ",
@@ -150,5 +151,10 @@
   "unit_crore": "কোটি ৳",
   "unit_lakh": "লাখ ৳",
   "unit_thousand": "হাজার ৳",
-  "unit_taka": "৳"
+  "unit_taka": "৳",
+  "deposit_expense_trend": "জমা ও খরচের ধারা",
+  "deposit_expense_trend_subtitle": "মাসভিত্তিক জমা ও খরচের তুলনা",
+  "income_statement_trend": "আয়-ব্যয়ের ধারা",
+  "income_statement_trend_subtitle": "মাসভিত্তিক আয়, ব্যয় ও নিট ফলাফল",
+  "no_chart_data": "মাসভিত্তিক কোনো তথ্য এখনো নেই।"
 }

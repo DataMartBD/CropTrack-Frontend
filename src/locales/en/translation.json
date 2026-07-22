@@ -101,7 +101,7 @@
   "chart_of_accounts": "Chart of Accounts",
   "accounts_group": "Accounts Group",
   "journal_voucher": "Journal Voucher",
-  "general_ledger": "Deposit and Expense",
+  "chit_sheet": "Chit Sheet",
   "ledger_report": "Ledger Report",
   "rate_setup": "Rate Setup",
   "delivery_list": "Delivery List",
@@ -122,6 +122,7 @@
   "shareholder_pl": "Shareholder P/L",
   "shareholder_summary": "Shareholder Summary",
   "day_wise_income": "Day-wise Income",
+  "monthly_report": "Monthly Report",
   "financial_overview": "Financial Overview",
   "last_updated": "Last updated",
   "refresh": "Refresh",
@@ -150,5 +151,10 @@
   "unit_crore": "in crore ৳",
   "unit_lakh": "in lakh ৳",
   "unit_thousand": "in thousand ৳",
-  "unit_taka": "in ৳"
+  "unit_taka": "in ৳",
+  "deposit_expense_trend": "Deposit & Expense Trend",
+  "deposit_expense_trend_subtitle": "Money in against money out, month by month",
+  "income_statement_trend": "Income Statement Trend",
+  "income_statement_trend_subtitle": "Income, expenditure and the bottom line by month",
+  "no_chart_data": "No monthly data to chart yet."
 }

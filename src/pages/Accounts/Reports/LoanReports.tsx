@@ -42,7 +42,7 @@ const LoanReportTemplate = ({
   todayStr: string;
   totalAmount: number;
 }) => {
-  const businessName = "রাহবার হিমাগার (প্রাঃ) লিমিটেড";
+  const businessName = "রাহ্‌বার হিমাগার (প্রাঃ) লিমিটেড";
 
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900 font-inter border border-black">

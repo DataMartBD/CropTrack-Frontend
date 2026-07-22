@@ -170,9 +170,9 @@ const getTranslatedNavItems = (t: any): NavItem[] => [
         path: "/accounts/journal-voucher",
       },
       {
-        name: t("general_ledger"),
+        name: t("chit_sheet"),
         icon: <FcDocument />,
-        path: "/accounts/general-ledger",
+        path: "/accounts/chit-sheet",
       },
       {
         name: t("ledger_report"),

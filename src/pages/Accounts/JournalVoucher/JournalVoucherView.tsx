@@ -60,7 +60,7 @@ const JournalVoucherTemplate = ({
 }) => {
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-0 max-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      <ReportHeader title="রাহবার হিমাগার (প্রাঃ) লিমিটেড">
+      <ReportHeader title="রাহ্‌বার হিমাগার (প্রাঃ) লিমিটেড">
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
           <span className="text-green-800 font-medium">মোবাইল:</span>{" "}
           ০১৭০১৮৮৯০৪, ০১৭৪০১৩৩১৪৪
