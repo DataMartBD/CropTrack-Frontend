@@ -10,6 +10,7 @@ interface ShareholderModel {
   heir_name: string;
   xrelation: string;
   xproj: string;
+  xproj_name?: string;
   xacc: string | null;
   xpercentage: string;
   xremarks: string | null;
@@ -57,6 +58,19 @@ export default function ShareholderList() {
       if (aCentral !== bCentral) return aCentral ? 1 : -1;
       return a.localeCompare(b);
     });
+  }, [shareholders]);
+
+  // Column headers read the unit name. The columns stay keyed by xproj — that
+  // key is what the percentage map, the column totals and the Central Account
+  // check all use, and it is the only value guaranteed to be present.
+  const projectNames = useMemo(() => {
+    const names: Record<string, string> = {};
+    shareholders.forEach((s) => {
+      if (s.xproj && s.xproj_name && !names[s.xproj]) {
+        names[s.xproj] = s.xproj_name;
+      }
+    });
+    return names;
   }, [shareholders]);
 
   // Pivot the flat list into one row per heir, with a column per project
@@ -219,7 +233,7 @@ export default function ShareholderList() {
                             : "font-semibold text-blue-700 dark:text-blue-300"
                         }`}
                       >
-                        {p}
+                        {projectNames[p] || p}
                       </th>
                     );
                   })}

@@ -1,12 +1,14 @@
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import PageMeta from "../../../components/common/PageMeta";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { useProjectOptions } from "../../../hooks/useProjectOptions";
+import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 
 interface SummaryRow {
+  /** Display order supplied by the API. */
+  xrow?: number | string;
   heir_name: string;
   xproj: string;
   xacc: string;
@@ -60,29 +62,29 @@ export default function ShareholderSummary() {
 
   const [startDate, setStartDate] = useState<Date | null>(firstOfMonth);
   const [endDate, setEndDate] = useState<Date | null>(now);
-  const [project, setProject] = useState<string>("");
-  const { projects, loading: loadingProjects } = useProjectOptions();
+  const [project, setProject] = useState<string>("All");
+  const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
 
   const [data, setData] = useState<SummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
 
-  // The report is always scoped to a single project, so the first one is
-  // selected as soon as the list arrives.
-  useEffect(() => {
-    setProject((prev) => prev || projects[0]?.code || "");
-  }, [projects]);
-
   const fetchReport = async () => {
-    if (!project || !startDate || !endDate) return;
+    if (!startDate || !endDate) return;
     setIsLoading(true);
     try {
+      // All is the absence of a filter, not a project the backend knows —
+      // the parameter is left off entirely rather than sent as "All".
+      const params: Record<string, string> = {
+        start_date: formatDate(startDate),
+        end_date: formatDate(endDate),
+      };
+      if (project !== "All") {
+        params.xproj = project;
+      }
+
       const response = await axios.get("/accounts/Shareholder/summary/", {
-        params: {
-          xproj: project,
-          start_date: formatDate(startDate),
-          end_date: formatDate(endDate),
-        },
+        params,
       });
       const payload = response.data?.data ?? response.data;
       setData(payload?.rows ? (payload as SummaryResponse) : null);
@@ -96,7 +98,17 @@ export default function ShareholderSummary() {
     }
   };
 
-  const rows = data?.rows || [];
+  // The API decides the order through `xrow`. Rows without one sort to the end
+  // keeping their original relative order, rather than jumping to the top as
+  // they would if a missing value read as 0.
+  const rows = useMemo(() => {
+    const rank = (row: SummaryRow) => {
+      const value = Number(row.xrow);
+      return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+    };
+    return [...(data?.rows || [])].sort((a, b) => rank(a) - rank(b));
+  }, [data]);
+
   const totals = data?.totals || null;
 
   return (
@@ -112,7 +124,7 @@ export default function ShareholderSummary() {
         <div className="mb-6 flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[160px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}
@@ -120,7 +132,6 @@ export default function ShareholderSummary() {
               disabled={loadingProjects}
               className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:focus:border-brand-500 disabled:opacity-50 h-[42px]"
             >
-              {projects.length === 0 && <option value="">—</option>}
               {projects.map((p) => (
                 <option key={p.code} value={p.code}>
                   {p.label}
@@ -156,7 +167,7 @@ export default function ShareholderSummary() {
           <div className="flex-1 min-w-[140px]">
             <button
               onClick={fetchReport}
-              disabled={isLoading || !project || !startDate || !endDate}
+              disabled={isLoading || !startDate || !endDate}
               className="w-full px-6 py-2 text-sm font-medium text-white bg-[#13725A] hover:bg-[#105E4A] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[42px]"
             >
               {isLoading ? "Loading..." : "Get"}
@@ -195,8 +206,8 @@ export default function ShareholderSummary() {
             </div>
           ) : !hasFetched ? (
             <div className="py-16 text-center text-sm text-gray-500 dark:text-gray-400">
-              Select Project, Start Date and End Date, then click "Get" to view
-              the report.
+              Select a Unit and a date range, then click "Get" to view the
+              report.
             </div>
           ) : (
             <table className="w-full min-w-[900px]">

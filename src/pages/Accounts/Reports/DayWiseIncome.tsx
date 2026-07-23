@@ -10,6 +10,7 @@ type ReportType = "summary" | "details";
 
 interface IncomeRow {
   xproj: string;
+  xproj_name?: string;
   xhrc1?: string; // present in summary rows
   xacc?: string; // present in details rows
   xdesc: string;
@@ -153,7 +154,7 @@ export default function DayWiseIncome() {
 
           <div className="flex-1 min-w-[160px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}
@@ -242,7 +243,7 @@ export default function DayWiseIncome() {
               <thead>
                 <tr className="border-b border-blue-200 bg-blue-50 dark:border-blue-900/40 dark:bg-blue-900/20">
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
-                    🏷️ Project
+                    🏷️ Unit
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
                     {isDetails ? "Account" : "Level"}
@@ -282,7 +283,7 @@ export default function DayWiseIncome() {
                       }`}
                     >
                       <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-300">
-                        {row.xproj}
+                        {row.xproj_name || row.xproj}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-800 dark:text-gray-300">
                         {isDetails ? row.xacc : row.xhrc1}

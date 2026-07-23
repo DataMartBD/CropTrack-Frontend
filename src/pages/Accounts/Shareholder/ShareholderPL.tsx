@@ -14,6 +14,9 @@ interface ShareholderPLRow {
   xper: number;
   heir_name: string;
   xproj: string;
+  xproj_name?: string;
+  /** Display order supplied by the API. */
+  xrow?: number | string;
   xpercentage: string;
   totalpl: string;
   shareholder_pl: string;
@@ -168,10 +171,21 @@ export default function ShareholderPL() {
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
 
+  // The API decides the order through `xrow`. Rows without one sort to the end
+  // keeping their original relative order, rather than jumping to the top as
+  // they would if a missing value read as 0.
+  const sortedRows = useMemo(() => {
+    const rank = (row: ShareholderPLRow) => {
+      const value = Number(row.xrow);
+      return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER;
+    };
+    return [...rows].sort((a, b) => rank(a) - rank(b));
+  }, [rows]);
+
   const pageRows = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
-    return rows.slice(start, start + PAGE_SIZE);
-  }, [rows, page]);
+    return sortedRows.slice(start, start + PAGE_SIZE);
+  }, [sortedRows, page]);
 
   return (
     <div>
@@ -222,7 +236,7 @@ export default function ShareholderPL() {
 
           <div className="flex-1 min-w-[160px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}
@@ -314,7 +328,7 @@ export default function ShareholderPL() {
                     👤 Heir Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
-                    🏷️ Project
+                    🏷️ Unit
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-blue-700 dark:text-blue-300">
                     Share %
@@ -361,7 +375,7 @@ export default function ShareholderPL() {
                           {row.heir_name}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-800 dark:text-gray-300">
-                          {row.xproj}
+                          {row.xproj_name || row.xproj}
                         </td>
                         <td className="px-6 py-4 text-right text-sm text-gray-800 dark:text-gray-300">
                           {`${formatPct(pct)}%`}

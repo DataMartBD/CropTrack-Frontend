@@ -51,7 +51,7 @@ const TrialBalanceFilter: React.FC<TrialBalanceFilterProps> = ({
           />
         </div>
         <div className="w-full sm:w-56">
-          <Label className="mb-2 text-sm">Project</Label>
+          <Label className="mb-2 text-sm">Unit</Label>
           <select
             value={formData.project}
             onChange={(e: ChangeEvent<HTMLSelectElement>) =>

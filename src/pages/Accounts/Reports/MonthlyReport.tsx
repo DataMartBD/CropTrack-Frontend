@@ -539,7 +539,7 @@ export default function MonthlyReport() {
         <div className="mb-8 flex flex-wrap items-end gap-4 print:hidden">
           <div className="min-w-[160px] flex-1">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}

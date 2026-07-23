@@ -45,7 +45,7 @@ const GLReportFilter: React.FC<GLReportFilterProps> = ({
     <div className="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 p-5 rounded-xl mb-6 shadow-sm">
       <div className="flex flex-wrap items-end gap-5">
          <div className="flex-1 min-w-[150px]">
-          <Label className="mb-2 text-sm">Project</Label>
+          <Label className="mb-2 text-sm">Unit</Label>
           <select
             value={formData.project}
             onChange={(e: ChangeEvent<HTMLSelectElement>) =>

@@ -19,6 +19,17 @@ type Props = {
 
 type MenuRect = { top: number; left: number; width: number; openUp: boolean };
 
+/**
+ * The panel is sized independently of the control it hangs off. Filter controls
+ * sit in narrow flex columns, and at that width every option — "125001 — সিটি
+ * ব্যাংক No: 1750 (ঠাকুরগাঁও)" — truncates to uselessness in the one place the
+ * user actually has to read it.
+ */
+const MIN_MENU_WIDTH = 380;
+
+/** Breathing room kept between the panel and the edge of the window. */
+const VIEWPORT_MARGIN = 8;
+
 export default function SearchableSelect({
   options,
   value,
@@ -62,10 +73,21 @@ export default function SearchableSelect({
       const menuHeight = 320; // rough estimate (search + max list)
       const spaceBelow = window.innerHeight - r.bottom;
       const openUp = spaceBelow < menuHeight && r.top > menuHeight;
+
+      // Wider than the control, but never wider than the window; and if
+      // widening would run the panel off the right edge, it slides back left
+      // instead of overflowing.
+      const maxWidth = window.innerWidth - VIEWPORT_MARGIN * 2;
+      const width = Math.min(Math.max(r.width, MIN_MENU_WIDTH), maxWidth);
+      const left = Math.max(
+        VIEWPORT_MARGIN,
+        Math.min(r.left, window.innerWidth - width - VIEWPORT_MARGIN),
+      );
+
       setMenuRect({
         top: openUp ? r.top - 4 : r.bottom + 4,
-        left: r.left,
-        width: r.width,
+        left,
+        width,
         openUp,
       });
     };

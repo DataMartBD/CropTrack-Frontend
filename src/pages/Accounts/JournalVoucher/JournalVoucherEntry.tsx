@@ -542,7 +542,7 @@ export default function JournalVoucherEntry() {
                         handleDetailChange(row.id, "xproj", e.target.value)
                       }
                     >
-                      <option value="">Select Project</option>
+                      <option value="">Select Unit</option>
                       {projects.map((p) => (
                         <option key={p.xcode} value={p.xcode}>
                           {p.xdesc || p.xcode}

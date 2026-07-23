@@ -16,6 +16,7 @@ import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 interface BalanceSheetItem {
   business_id_id: number;
   xproj?: string;
+  xproj_name?: string;
   xacctype: string;
   xhrc1: string;
   xdesc: string;
@@ -49,6 +50,14 @@ const groupData = (items: BalanceSheetItem[]) => {
   });
   return groups;
 };
+
+/**
+ * Heading for a project group. Rows group by `xproj` because the code is the
+ * stable identity; the heading reads the name, searched across the group so one
+ * row missing it does not blank the heading.
+ */
+const getProjectLabel = (items: BalanceSheetItem[], fallback: string) =>
+  items.find((item) => item.xproj_name)?.xproj_name || fallback;
 
 const getGroupTotal = (
   items: BalanceSheetItem[],
@@ -111,7 +120,7 @@ const BalanceSheetTemplate = ({
               >
                 <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
-                    Project: {projName}
+                    {getProjectLabel(projItems, projName)}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
                     {projTotal.toLocaleString(undefined, {
@@ -188,7 +197,7 @@ const BalanceSheetTemplate = ({
               >
                 <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
-                    Project: {projName}
+                    {getProjectLabel(projItems, projName)}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
                     {projTotal.toLocaleString(undefined, {
@@ -443,7 +452,7 @@ export default function BalanceSheet() {
         <div className="flex flex-wrap items-end gap-4 mb-8 print:hidden">
           <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}

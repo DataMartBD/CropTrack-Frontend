@@ -17,6 +17,7 @@ interface BalanceSheetItem {
   business_id: number;
   business_name: string;
   xproj?: string;
+  xproj_name?: string;
   xacc: string;
   xdesc: string;
   xsub: string;
@@ -39,21 +40,28 @@ interface SubAccount {
   xdesc: string;
 }
 
+/** The heading when the report spans every unit rather than naming one. */
+const COMPANY_NAME = "রাহ্‌বার হিমাগার প্রাইভেট লিমিটেড";
+
 const BankCashTemplate = ({
   data,
   formattedDateRange,
   todayStr,
+  reportTitle,
 }: {
   data: BalanceSheetItem[];
   formattedDateRange: string;
   todayStr: string;
+  reportTitle: string;
 }) => {
-  const businessName = data[0]?.business_name || "Business Name";
   const totalClosingBalance = data.reduce(
     (sum, item) => sum + (parseFloat(item.closing_balance) || 0),
     0,
   );
 
+  // Grouped by xproj because the code is the stable identity; the heading reads
+  // the name, searched across the group so one row missing it does not blank
+  // the heading, and falling back to the code when the API sends no name.
   const groupedData: Record<string, BalanceSheetItem[]> = {};
   data.forEach((item) => {
     const proj = item.xproj || "General";
@@ -61,9 +69,12 @@ const BankCashTemplate = ({
     groupedData[proj].push(item);
   });
 
+  const projectLabel = (items: BalanceSheetItem[], fallback: string) =>
+    items.find((item) => item.xproj_name)?.xproj_name || fallback;
+
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      <ReportHeader title={businessName}>
+      <ReportHeader title={reportTitle}>
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
           <span className="text-green-800 font-medium">Report Date:</span>{" "}
           {formattedDateRange}
@@ -118,7 +129,7 @@ const BankCashTemplate = ({
                     colSpan={8}
                     className="p-2 text-left text-[11px] uppercase tracking-wide border-r border-black"
                   >
-                    Project: {proj}
+                    {projectLabel(items, proj)}
                   </td>
                 </tr>
                 {items.map((item, idx) => (
@@ -213,6 +224,12 @@ export default function BankCashBalanceSheet() {
 
   const [project, setProject] = useState<string>("All");
   const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
+  /**
+   * The unit the loaded report actually covers. Kept apart from `project` so
+   * changing the dropdown without regenerating cannot retitle rows it does not
+   * describe.
+   */
+  const [loadedProject, setLoadedProject] = useState<string>("All");
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAcc, setSelectedAcc] = useState("");
@@ -336,6 +353,7 @@ export default function BankCashBalanceSheet() {
         },
       });
 
+      setLoadedProject(project);
       if (response.data && response.data.data) {
         setReportData(response.data.data);
       } else {
@@ -361,6 +379,20 @@ export default function BankCashBalanceSheet() {
     const t = toDate.toLocaleDateString("en-GB");
     return f === t ? f : `${f} to ${t}`;
   }, [fromDate, toDate]);
+
+  /**
+   * "All" spans every unit, so the report is headed by the company. A single
+   * unit is headed by its own name, read from the rows and falling back to the
+   * filter's label when the rows carry no name.
+   */
+  const reportTitle = useMemo(() => {
+    if (loadedProject === "All") return COMPANY_NAME;
+    return (
+      reportData?.find((row) => row.xproj_name)?.xproj_name ||
+      projects.find((p) => p.code === loadedProject)?.label ||
+      loadedProject
+    );
+  }, [loadedProject, reportData, projects]);
 
   const handlePrint = () => {
     if (!reportData) return;
@@ -416,6 +448,7 @@ export default function BankCashBalanceSheet() {
     root.render(
       <BankCashTemplate
         data={reportData}
+        reportTitle={reportTitle}
         formattedDateRange={formattedDateRange}
         todayStr={todayStr}
       />,
@@ -443,7 +476,7 @@ export default function BankCashBalanceSheet() {
         <div className="flex flex-wrap items-end gap-4 mb-8 pb-32 print:hidden relative z-10">
           <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}
@@ -550,6 +583,7 @@ export default function BankCashBalanceSheet() {
             <div className="max-w-[210mm] w-full transform scale-[0.9] sm:scale-100 origin-top">
               <BankCashTemplate
                 data={reportData}
+                reportTitle={reportTitle}
                 formattedDateRange={formattedDateRange}
                 todayStr={todayStr}
               />

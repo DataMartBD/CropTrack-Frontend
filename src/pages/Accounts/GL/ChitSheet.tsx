@@ -13,6 +13,7 @@ import { useProjectOptionsWithAll } from "../../../hooks/useProjectOptions";
 interface LedgerItem {
   xvoucher: string;
   xproj?: string;
+  xproj_name?: string;
   business_id_id: number;
   business_name: string;
   xdate: string;
@@ -50,6 +51,9 @@ interface LedgerResponse {
   banks?: BankBalance[];
 }
 
+/** The heading when the sheet spans every unit rather than naming one. */
+const COMPANY_NAME = "রাহ্‌বার হিমাগার প্রাইভেট লিমিটেড";
+
 const formatAmount = (value: number) => Math.abs(value).toLocaleString();
 
 /**
@@ -74,6 +78,14 @@ const groupData = (items: LedgerItem[]) => {
   return groups;
 };
 
+/**
+ * Heading for a project group. Rows are grouped by `xproj` because the code is
+ * the stable identity, but the heading reads the name — searching rather than
+ * taking the first row, so one row missing the name does not blank it.
+ */
+const getProjectLabel = (items: LedgerItem[], fallback: string) =>
+  items.find((item) => item.xproj_name)?.xproj_name || fallback;
+
 const getGroupTotal = (items: LedgerItem[], type: "deposit" | "expense") => {
   return items.reduce((sum, item) => {
     const val =
@@ -88,12 +100,14 @@ const ChitSheetTemplate = ({
   groupedExpenses,
   formattedDateRange,
   todayStr,
+  reportTitle,
 }: {
   ledgerData: LedgerResponse;
   groupedDeposits: Record<string, Record<string, LedgerItem[]>>;
   groupedExpenses: Record<string, Record<string, LedgerItem[]>>;
   formattedDateRange: string;
   todayStr: string;
+  reportTitle: string;
 }) => {
   const chitNo = ledgerData.deposits[0]?.xvoucher?.split("-")?.[2] || "---";
 
@@ -103,12 +117,7 @@ const ChitSheetTemplate = ({
 
   return (
     <div className="bg-white p-6 rounded-xl ring-1 ring-gray-200 shadow-sm print:ring-0 print:shadow-none print:p-8 min-w-[210mm] mx-auto min-h-[297mm] print:w-full print:max-w-none print:min-h-0 text-gray-900">
-      <ReportHeader
-        title={
-          ledgerData.deposits[0]?.business_name ||
-          "রাহ্‌বার হিমাগার (প্রাঃ) লিমিটেড"
-        }
-      >
+      <ReportHeader title={reportTitle}>
         <p className="text-[10px] bg-white px-1.5 border border-zinc-200 rounded-sm">
           <span className="text-green-800 font-medium">Report Date:</span>{" "}
           {formattedDateRange}
@@ -147,7 +156,7 @@ const ChitSheetTemplate = ({
               >
                 <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
-                     {projName}
+                    {getProjectLabel(projItems, projName)}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
                     {formatAmount(projTotal)}
@@ -222,7 +231,7 @@ const ChitSheetTemplate = ({
               >
                 <div className="flex border-b border-gray-400 bg-gray-200 print:bg-transparent">
                   <div className="flex-1 px-2 py-1 font-bold text-xs uppercase tracking-wide">
-                    {projName}
+                    {getProjectLabel(projItems, projName)}
                   </div>
                   <div className="w-24 sm:w-32 px-2 py-1 text-right font-bold text-xs border-l border-gray-400">
                     {formatAmount(projTotal)}
@@ -389,6 +398,12 @@ export default function ChitSheet() {
   const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
   const [loading, setLoading] = useState(false);
   const [ledgerData, setLedgerData] = useState<LedgerResponse | null>(null);
+  /**
+   * The unit the loaded sheet actually covers. Kept apart from `project` so
+   * changing the dropdown without refetching cannot retitle rows it does not
+   * describe.
+   */
+  const [loadedProject, setLoadedProject] = useState<string>("All");
 
   const handleGetLedger = async () => {
     if (!fromDate || !toDate) return;
@@ -426,12 +441,14 @@ export default function ChitSheet() {
 
       if (response.data && (response.data.deposits || response.data.expenses)) {
         setLedgerData(response.data as LedgerResponse);
+        setLoadedProject(project);
       } else if (
         response.data &&
         response.data.data &&
         (response.data.data.deposits || response.data.data.expenses)
       ) {
         setLedgerData(response.data.data as LedgerResponse);
+        setLoadedProject(project);
       } else {
         console.warn("Unexpected response structure:", response.data);
         setLedgerData(null);
@@ -450,6 +467,24 @@ export default function ChitSheet() {
   const groupedExpenses = useMemo(() => {
     return ledgerData ? groupData(ledgerData.expenses) : {};
   }, [ledgerData]);
+
+  /**
+   * "All" spans every unit, so the sheet is headed by the company. A single
+   * unit is headed by its own name, read from the rows and falling back to the
+   * filter's label when the rows carry no name.
+   */
+  const reportTitle = useMemo(() => {
+    if (loadedProject === "All") return COMPANY_NAME;
+    const rows = [
+      ...(ledgerData?.deposits ?? []),
+      ...(ledgerData?.expenses ?? []),
+    ];
+    return (
+      rows.find((row) => row.xproj_name)?.xproj_name ||
+      projects.find((p) => p.code === loadedProject)?.label ||
+      loadedProject
+    );
+  }, [loadedProject, ledgerData, projects]);
 
   const todayStr = new Date().toLocaleDateString("en-GB", {
     day: "numeric",
@@ -522,6 +557,7 @@ export default function ChitSheet() {
         groupedExpenses={groupedExpenses}
         formattedDateRange={formattedDateRange}
         todayStr={todayStr}
+        reportTitle={reportTitle}
       />,
     );
 
@@ -543,7 +579,7 @@ export default function ChitSheet() {
         <div className="flex flex-wrap items-end gap-4 mb-8 print:hidden">
           <div className="flex-1 min-w-[150px]">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Project
+              Unit
             </label>
             <select
               value={project}
@@ -616,6 +652,7 @@ export default function ChitSheet() {
                 groupedExpenses={groupedExpenses}
                 formattedDateRange={formattedDateRange}
                 todayStr={todayStr}
+                reportTitle={reportTitle}
               />
             </div>
           </div>

@@ -146,7 +146,7 @@ const LedgerDetailsFilter: React.FC<LedgerDetailsFilterProps> = ({
         {/* Project Picker */}
         <div className="flex-1 min-w-[150px]">
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Project
+            Unit
           </label>
           <select
             value={formData.project}
