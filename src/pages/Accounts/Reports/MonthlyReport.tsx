@@ -17,8 +17,28 @@ interface ReportItem {
 
 interface ReportMonth {
   month: string;
-  items: ReportItem[];
+  /** Absent on the summary endpoint, which returns month subtotals only. */
+  items?: ReportItem[];
   subtotal: number;
+}
+
+/**
+ * The two sheets the same form can be drawn as. `detailed` lists every voucher
+ * line under its month; `summary` collapses each month to its subtotal, which
+ * is what the endpoint returns for the condensed sheet.
+ */
+type ReportMode = "detailed" | "summary";
+
+const ENDPOINTS: Record<ReportMode, string> = {
+  detailed: "/accounts/report/income-statement-monthly/",
+  summary: "/accounts/report/income-statement-summary/",
+};
+
+interface ReportProject {
+  xproj: string;
+  xproj_name: string;
+  total: number;
+  months: ReportMonth[];
 }
 
 interface ReportAccount {
@@ -26,7 +46,7 @@ interface ReportAccount {
   xacc: string;
   xdesc: string;
   total: number;
-  months: ReportMonth[];
+  projects: ReportProject[];
 }
 
 interface MonthlyReportResponse {
@@ -160,13 +180,49 @@ const formatDate = (date: Date): string => {
 const sumTotals = (accounts: ReportAccount[]): number =>
   accounts.reduce((sum, account) => sum + (account.total || 0), 0);
 
+const projectLabelOf = (project: ReportProject): string =>
+  project.xproj_name || project.xproj || "";
+
 /**
- * Rows an account occupies: its title row, one row per item, and its মোট row.
- * The নং and the outer টাকা column are single tall cells spanning all of them,
- * which is what gives the form its uninterrupted outer columns.
+ * A head split across a single project needs no project banding — the sheet
+ * already names the project it was drawn for. Only a head that actually spans
+ * more than one gets the extra name and subtotal rows.
  */
-const accountRowSpan = (account: ReportAccount): number =>
-  2 + account.months.reduce((rows, month) => rows + month.items.length, 0);
+const showsProjectRows = (account: ReportAccount): boolean =>
+  (account.projects || []).length > 1;
+
+/**
+ * Rows an account occupies: its title row, its body rows, the per-project
+ * name/subtotal rows when it spans several projects, and its মোট row. The নং
+ * and the outer টাকা column are single tall cells spanning all of them, which
+ * is what gives the form its uninterrupted outer columns — so this has to agree
+ * exactly with what the body actually renders, in both modes.
+ *
+ * `bodyRows` is what differs: the detailed sheet gives each item a row, the
+ * summary sheet gives each month one.
+ */
+const accountRowSpan = (
+  account: ReportAccount,
+  bodyRows: (project: ReportProject) => number,
+): number => {
+  const banded = showsProjectRows(account) ? 2 : 0;
+  return (
+    2 +
+    (account.projects || []).reduce(
+      (rows, project) => rows + banded + bodyRows(project),
+      0,
+    )
+  );
+};
+
+const itemRows = (project: ReportProject): number =>
+  (project.months || []).reduce(
+    (rows, month) => rows + (month.items?.length || 0),
+    0,
+  );
+
+const monthRows = (project: ReportProject): number =>
+  (project.months || []).length;
 
 const cleanDescription = (text: string): string => {
   const trimmed = (text || "").trim();
@@ -174,11 +230,11 @@ const cleanDescription = (text: string): string => {
 };
 
 /**
- * One half of the form. Both halves carry the same six columns —
+ * One half of the detailed form. Both halves carry the same six columns —
  * নং | মাস | বিবরণ | টাকা (item) | টাকা (month subtotal) | টাকা (head total) —
  * under a three-cell header: আদায় on the left, খরচ on the right.
  */
-const ReportSide = ({ accounts }: { accounts: ReportAccount[] }) => (
+const DetailedSide = ({ accounts }: { accounts: ReportAccount[] }) => (
   <table className="w-full table-fixed border-collapse border-t border-black text-[8px] leading-[1.35]">
     <colgroup>
       <col className="w-[5%]" />
@@ -200,7 +256,9 @@ const ReportSide = ({ accounts }: { accounts: ReportAccount[] }) => (
     </thead>
 
     {accounts.map((account, accountIndex) => {
-      const rowSpan = accountRowSpan(account);
+      const rowSpan = accountRowSpan(account, itemRows);
+      const projects = account.projects || [];
+      const bandProjects = showsProjectRows(account);
 
       // Deliberately breakable: a head with dozens of rows that refuses to
       // split gets pushed to the next page whole, leaving the page it came from
@@ -230,36 +288,66 @@ const ReportSide = ({ accounts }: { accounts: ReportAccount[] }) => (
             </td>
           </tr>
 
-          {account.months.map((month, monthIndex) => (
-            <Fragment key={`${month.month}-${monthIndex}`}>
-              {month.items.map((item, itemIndex) => (
-                <tr key={`${month.month}-${itemIndex}`}>
-                  {itemIndex === 0 && (
-                    <td
-                      rowSpan={month.items.length}
-                      className={`${CELL} align-top whitespace-nowrap`}
-                    >
-                      {monthLabel(month.month)}
-                    </td>
-                  )}
-                  <td className={`${CELL} align-top break-words`}>
-                    {cleanDescription(item.description)}
+          {projects.map((project, projectIndex) => (
+            <Fragment key={`${project.xproj}-${projectIndex}`}>
+              {bandProjects && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className={`${CELL} align-top font-semibold italic`}
+                  >
+                    প্রকল্পঃ {projectLabelOf(project)}
                   </td>
-                  <td className={`${MONEY} align-top`}>
-                    {formatMoney(item.amount)}
-                  </td>
-                  {itemIndex === 0 && (
-                    <td
-                      rowSpan={month.items.length}
-                      className={`${MONEY} align-top`}
-                    >
-                      {month.items.length > 1
-                        ? formatMoney(month.subtotal)
-                        : ""}
-                    </td>
-                  )}
                 </tr>
-              ))}
+              )}
+
+              {(project.months || []).map((month, monthIndex) => {
+                const items = month.items || [];
+                return (
+                  <Fragment key={`${month.month}-${monthIndex}`}>
+                    {items.map((item, itemIndex) => (
+                      <tr key={`${month.month}-${itemIndex}`}>
+                        {itemIndex === 0 && (
+                          <td
+                            rowSpan={items.length}
+                            className={`${CELL} align-top whitespace-nowrap`}
+                          >
+                            {monthLabel(month.month)}
+                          </td>
+                        )}
+                        <td className={`${CELL} align-top break-words`}>
+                          {cleanDescription(item.description)}
+                        </td>
+                        <td className={`${MONEY} align-top`}>
+                          {formatMoney(item.amount)}
+                        </td>
+                        {itemIndex === 0 && (
+                          <td
+                            rowSpan={items.length}
+                            className={`${MONEY} align-top`}
+                          >
+                            {items.length > 1 ? formatMoney(month.subtotal) : ""}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </Fragment>
+                );
+              })}
+
+              {bandProjects && (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className={`${CELL} align-top text-right font-semibold`}
+                  >
+                    {projectLabelOf(project)} মোট
+                  </td>
+                  <td className={`${MONEY} align-top font-semibold`}>
+                    {formatMoney(project.total)}
+                  </td>
+                </tr>
+              )}
             </Fragment>
           ))}
 
@@ -277,14 +365,131 @@ const ReportSide = ({ accounts }: { accounts: ReportAccount[] }) => (
   </table>
 );
 
+/**
+ * One half of the summary form. The বিবরণ and per-item টাকা columns have
+ * nothing to carry when the endpoint returns month subtotals only, so the
+ * summary sheet drops them rather than ruling two empty columns down the page:
+ * নং | মাস | টাকা (month) | টাকা (head total).
+ */
+const SummarySide = ({ accounts }: { accounts: ReportAccount[] }) => (
+  <table className="w-full table-fixed border-collapse border-t border-black text-[8px] leading-[1.35]">
+    <colgroup>
+      <col className="w-[8%]" />
+      <col className="w-[36%]" />
+      <col className="w-[28%]" />
+      <col className="w-[28%]" />
+    </colgroup>
+
+    <thead>
+      <tr className="text-center text-[9px] font-semibold">
+        <th className={`${CELL} py-1`}>নং</th>
+        <th colSpan={2} className={`${CELL} py-1`}>
+          বিবরণ
+        </th>
+        <th className={`${CELL_LAST} py-1`}>টাকা</th>
+      </tr>
+    </thead>
+
+    {accounts.map((account, accountIndex) => {
+      const rowSpan = accountRowSpan(account, monthRows);
+      const projects = account.projects || [];
+      const bandProjects = showsProjectRows(account);
+
+      return (
+        <tbody
+          key={`${account.xacc}-${accountIndex}`}
+          className="break-inside-auto"
+        >
+          <tr>
+            <td rowSpan={rowSpan} className={`${CELL} align-top text-center`}>
+              {toBengaliDigits(account.sl ?? accountIndex + 1)}
+            </td>
+            <td
+              colSpan={2}
+              className={`${CELL} align-top text-center text-[9px] font-bold`}
+            >
+              {account.xdesc}
+            </td>
+            <td
+              rowSpan={rowSpan}
+              className={`${MONEY_LAST} align-bottom font-bold`}
+            >
+              {formatMoney(account.total)}
+            </td>
+          </tr>
+
+          {projects.map((project, projectIndex) => (
+            <Fragment key={`${project.xproj}-${projectIndex}`}>
+              {bandProjects && (
+                <tr>
+                  <td
+                    colSpan={2}
+                    className={`${CELL} align-top font-semibold italic`}
+                  >
+                    প্রকল্পঃ {projectLabelOf(project)}
+                  </td>
+                </tr>
+              )}
+
+              {(project.months || []).map((month, monthIndex) => (
+                <tr key={`${month.month}-${monthIndex}`}>
+                  <td className={`${CELL} align-top whitespace-nowrap`}>
+                    {monthLabel(month.month)}
+                  </td>
+                  <td className={`${MONEY} align-top`}>
+                    {formatMoney(month.subtotal)}
+                  </td>
+                </tr>
+              ))}
+
+              {bandProjects && (
+                <tr>
+                  <td className={`${CELL} align-top text-right font-semibold`}>
+                    {projectLabelOf(project)} মোট
+                  </td>
+                  <td className={`${MONEY} align-top font-semibold`}>
+                    {formatMoney(project.total)}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          ))}
+
+          <tr>
+            <td className={`${CELL} align-top text-right font-bold`}>মোট</td>
+            <td className={`${MONEY} align-top font-bold`}>
+              {formatMoney(account.total)}
+            </td>
+          </tr>
+        </tbody>
+      );
+    })}
+  </table>
+);
+
+const ReportSide = ({
+  accounts,
+  mode,
+}: {
+  accounts: ReportAccount[];
+  mode: ReportMode;
+}) =>
+  mode === "summary" ? (
+    <SummarySide accounts={accounts} />
+  ) : (
+    <DetailedSide accounts={accounts} />
+  );
+
 const MonthlyReportSheet = ({
   data,
+  mode,
   periodLine,
   printedOn,
   projectLabel,
   unitLabel,
 }: {
   data: MonthlyReportResponse;
+  mode: ReportMode;
   periodLine: string;
   printedOn: string;
   projectLabel: string;
@@ -303,7 +508,9 @@ const MonthlyReportSheet = ({
 
       <div className="mb-2 text-center leading-snug">
         <h1 className="text-[12px] font-bold">{companyName}</h1>
-        <p className="text-[10px]">মাসিক প্রতিবেদন</p>
+        <p className="text-[10px]">
+          মাসিক প্রতিবেদন{mode === "summary" ? " (সংক্ষিপ্ত)" : ""}
+        </p>
         <p className="text-[11px] font-bold underline underline-offset-2">
           {periodLine}
         </p>
@@ -321,10 +528,10 @@ const MonthlyReportSheet = ({
                 keeps the আদায় column boxed down the page after it runs out of
                 rows. Left and right collapse into one line at the divider. */}
             <td className="w-1/2 border-l border-r border-black p-0 align-top">
-              <ReportSide accounts={data.income || []} />
+              <ReportSide accounts={data.income || []} mode={mode} />
             </td>
             <td className="w-1/2 border-l border-r border-black p-0 align-top">
-              <ReportSide accounts={data.expenditure || []} />
+              <ReportSide accounts={data.expenditure || []} mode={mode} />
             </td>
           </tr>
         </tbody>
@@ -378,6 +585,7 @@ export default function MonthlyReport() {
   const [fromDate, setFromDate] = useState<Date | null>(firstOfYear);
   const [toDate, setToDate] = useState<Date | null>(now);
   const [project, setProject] = useState<string>("All");
+  const [mode, setMode] = useState<ReportMode>("detailed");
   const { projects, loading: loadingProjects } = useProjectOptionsWithAll();
 
   const [data, setData] = useState<MonthlyReportResponse | null>(null);
@@ -385,14 +593,20 @@ export default function MonthlyReport() {
   const [hasFetched, setHasFetched] = useState(false);
 
   // The period the sheet is stamped with is the one the data was fetched for,
-  // not whatever the pickers happen to show afterwards.
+  // not whatever the pickers happen to show afterwards. The mode belongs to the
+  // same set for a harder reason: the two endpoints return different shapes, so
+  // drawing fetched data in the other mode would be reading columns that are
+  // not there.
   const [reportRange, setReportRange] = useState<{
     from: Date;
     to: Date;
   } | null>(null);
   const [reportProject, setReportProject] = useState<string>("All");
+  const [reportMode, setReportMode] = useState<ReportMode>("detailed");
 
-  const fetchReport = async () => {
+  // Takes the mode explicitly so the switch can fetch the mode it is moving to
+  // rather than the one state has not caught up to yet.
+  const fetchReport = async (nextMode: ReportMode = mode) => {
     if (!fromDate || !toDate) return;
     setIsLoading(true);
     try {
@@ -405,7 +619,7 @@ export default function MonthlyReport() {
       }
 
       const result = await getData<MonthlyReportResponse>(
-        "/accounts/report/income-statement-monthly/",
+        ENDPOINTS[nextMode],
         params,
       );
 
@@ -416,6 +630,7 @@ export default function MonthlyReport() {
       });
       setReportRange({ from: fromDate, to: toDate });
       setReportProject(project);
+      setReportMode(nextMode);
       setHasFetched(true);
     } catch (error) {
       console.error("Error fetching monthly report:", error);
@@ -424,6 +639,14 @@ export default function MonthlyReport() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Flipping the switch redraws the sheet straight away once there is one to
+  // redraw; before that it is just a setting for the next Get.
+  const handleModeChange = (next: ReportMode) => {
+    if (next === mode) return;
+    setMode(next);
+    if (hasFetched) void fetchReport(next);
   };
 
   const periodLine = useMemo(() => {
@@ -510,6 +733,7 @@ export default function MonthlyReport() {
     root.render(
       <MonthlyReportSheet
         data={data}
+        mode={reportMode}
         periodLine={periodLine}
         printedOn={printedOn}
         projectLabel={projectLabel}
@@ -579,9 +803,38 @@ export default function MonthlyReport() {
             />
           </div>
 
+          <div className="min-w-[220px] flex-1">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+              View
+            </label>
+            <div className="flex h-[42px] gap-1 rounded-lg border border-gray-300 bg-gray-50 p-1 dark:border-gray-700 dark:bg-white/[0.03]">
+              {(
+                [
+                  { value: "detailed", label: "Detailed" },
+                  { value: "summary", label: "Summary" },
+                ] as { value: ReportMode; label: string }[]
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleModeChange(option.value)}
+                  disabled={isLoading}
+                  aria-pressed={mode === option.value}
+                  className={`flex-1 rounded-md px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    mode === option.value
+                      ? "bg-[#13725A] text-white shadow-sm"
+                      : "text-gray-600 hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex min-w-[240px] flex-1 gap-2">
             <button
-              onClick={fetchReport}
+              onClick={() => fetchReport()}
               disabled={isLoading || !fromDate || !toDate}
               className="h-[42px] flex-1 rounded-lg bg-[#13725A] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#105E4A] disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -617,6 +870,7 @@ export default function MonthlyReport() {
             <div className="w-full max-w-[210mm] origin-top scale-[0.9] transform sm:scale-100">
               <MonthlyReportSheet
                 data={data!}
+                mode={reportMode}
                 periodLine={periodLine}
                 printedOn={printedOn}
                 projectLabel={projectLabel}
