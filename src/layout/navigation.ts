@@ -7,6 +7,7 @@ import {
   FcComboChart,
   FcConferenceCall,
   FcDataSheet,
+  FcDebt,
   FcDoughnutChart,
   FcFinePrint,
   FcGenealogy,
@@ -111,6 +112,7 @@ export const NAV_MODULES: NavModule[] = [
       { labelKey: "balance_sheet", path: "/accounts/report/balance-sheet", Icon: FcComboChart },
       { labelKey: "day_wise_income", path: "/accounts/report/day-wise-income", Icon: FcPlanner },
       { labelKey: "monthly_report", path: "/accounts/report/monthly", Icon: FcCalendar },
+      { labelKey: "general_borrowed", path: "/accounts/report/general-borrowed", Icon: FcDebt },
     ],
   },
   {
