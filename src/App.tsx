@@ -41,6 +41,7 @@ import LoanReports from "./pages/Accounts/Reports/LoanReports";
 import DayWiseIncome from "./pages/Accounts/Reports/DayWiseIncome";
 import MonthlyReport from "./pages/Accounts/Reports/MonthlyReport";
 import GeneralBorrowed from "./pages/Accounts/Reports/GeneralBorrowed";
+import GeneralBorrowedBalance from "./pages/Accounts/Reports/GeneralBorrowedBalance";
 import TrialBalance from "./pages/Reports/TrialBalance";
 import CodeManual from "./pages/Reports/CodeManual";
 import LedgerDetails from "./pages/Reports/LedgerDetails";
@@ -125,6 +126,10 @@ export default function App() {
               <Route
                 path="/accounts/report/general-borrowed"
                 element={<GeneralBorrowed />}
+              />
+              <Route
+                path="/accounts/report/general-borrowed-balance"
+                element={<GeneralBorrowedBalance />}
               />
 
               <Route path="/reports/trial-balance" element={<TrialBalance />} />

@@ -19,6 +19,7 @@ import {
   FcPieChart,
   FcPlanner,
   FcReading,
+  FcScatterPlot,
   FcSurvey,
   FcTreeStructure,
 } from "react-icons/fc";
@@ -113,6 +114,7 @@ export const NAV_MODULES: NavModule[] = [
       { labelKey: "day_wise_income", path: "/accounts/report/day-wise-income", Icon: FcPlanner },
       { labelKey: "monthly_report", path: "/accounts/report/monthly", Icon: FcCalendar },
       { labelKey: "general_borrowed", path: "/accounts/report/general-borrowed", Icon: FcDebt },
+      { labelKey: "general_borrowed_balance", path: "/accounts/report/general-borrowed-balance", Icon: FcScatterPlot },
     ],
   },
   {
